@@ -1,1192 +1,665 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CallWave — HD Voice + Smart Voicemail</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<style>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>CallWave — HD Voice + Smart Voicemail</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-* { margin:0; padding:0; box-sizing:border-box; }
-:root {
-  --bg: #0b141a;
-  --panel: #111b21;
-  --panel-2: #202c33;
-  --panel-3: #2a3942;
-  --green: #00a884;
-  --green-light: #06cf9c;
-  --green-dark: #025144;
-  --text: #e9edef;
-  --text-sec: #8696a0;
-  --border: #222d34;
-  --red: #f15c6d;
-  --blue: #53bdeb;
-  --yellow: #febf2f;
-  --shadow: 0 8px 32px rgba(0,0,0,0.4);
-}
-body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow:hidden; }
-.mono { font-family: 'JetBrains Mono', monospace; }
-
-/* Login */
-#loginScreen {
-  position: fixed; inset:0; z-index:100;
-  background: radial-gradient(1200px 600px at 20% -10%, #0f2e26 0%, var(--bg) 60%),
-              radial-gradient(800px 400px at 90% 110%, #132a3a 0%, var(--bg) 70%);
-  display:flex; align-items:center; justify-content:center;
-}
-.login-card {
-  width: 360px; background: var(--panel); border:1px solid var(--border);
-  border-radius: 20px; padding: 32px; box-shadow: var(--shadow);
-  animation: slideUp .5s ease;
-}
-@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
-.logo {
-  width:56px;height:56px;background:linear-gradient(135deg, var(--green), var(--green-light));
-  border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:20px;
-  box-shadow: 0 8px 24px rgba(0,168,132,0.3);
-}
-.login-card h1 { font-size:28px; font-weight:700; letter-spacing:-0.5px; margin-bottom:6px; }
-.login-card p { color:var(--text-sec); font-size:14px; line-height:1.5; margin-bottom:24px; }
-.input {
-  width:100%; background: var(--panel-2); border:1px solid var(--border); color: var(--text);
-  padding:14px 16px; border-radius:12px; font-size:15px; outline:none; transition:.2s;
-}
-.input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,168,132,0.15); }
-.btn-primary {
-  width:100%; background: var(--green); color:white; border:none; padding:14px; border-radius:12px;
-  font-weight:600; font-size:15px; cursor:pointer; transition:.2s; margin-top:16px;
-}
-.btn-primary:hover { background: var(--green-light); transform:translateY(-1px); }
-.btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
-.features { margin-top:24px; display:grid; gap:12px; }
-.feat { display:flex; gap:12px; align-items:center; font-size:13px; color:var(--text-sec); }
-.feat-icon { width:32px;height:32px;background:var(--panel-2);border-radius:8px;display:flex;align-items:center;justify-content:center; flex-shrink:0; }
-
-/* App layout */
-#app { display:none; height:100vh; flex-direction:row; }
-#app.active { display:flex; }
-
-.sidebar {
-  width: 380px; min-width: 320px; background: var(--panel); border-right:1px solid var(--border);
-  display:flex; flex-direction:column; height:100vh;
-}
-.topbar {
-  height:64px; background: var(--panel-2); display:flex; align-items:center; justify-content:space-between;
-  padding:0 16px; border-bottom:1px solid var(--border);
-}
-.user-info { display:flex; align-items:center; gap:12px; }
-.avatar {
-  width:40px;height:40px;border-radius:50%; background:linear-gradient(135deg, #1a4d3e, var(--green));
-  display:flex; align-items:center; justify-content:center; font-weight:700; color:white; font-size:16px;
-}
-.user-meta .name { font-weight:600; font-size:15px; }
-.user-meta .status { font-size:12px; color: var(--green-light); display:flex; align-items:center; gap:4px; }
-.status-dot { width:6px;height:6px;background:var(--green-light);border-radius:50%; display:inline-block; box-shadow:0 0 6px var(--green-light); }
-
-.icon-btn {
-  width:36px;height:36px;border-radius:50%; background: transparent; border:none; color:var(--text-sec);
-  display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.2s; font-size:18px;
-}
-.icon-btn:hover { background: var(--panel-3); color: var(--text); }
-
-.tabs { display:flex; padding:8px; gap:8px; background: var(--panel); border-bottom:1px solid var(--border); }
-.tab {
-  flex:1; padding:10px; border-radius:10px; border:none; background: transparent; color: var(--text-sec);
-  font-weight:500; font-size:13px; cursor:pointer; transition:.2s; display:flex; align-items:center; justify-content:center; gap:6px;
-}
-.tab.active { background: var(--panel-2); color: var(--text); }
-.tab-badge { background: var(--red); color:white; font-size:10px; padding:2px 6px; border-radius:10px; font-weight:700; }
-
-.search-box { padding:12px 16px; }
-.search-inner { background: var(--panel-2); border-radius:12px; display:flex; align-items:center; gap:10px; padding:10px 14px; }
-.search-inner input { background:transparent; border:none; outline:none; color:var(--text); flex:1; font-size:14px; }
-
-.list { flex:1; overflow-y:auto; }
-.list::-webkit-scrollbar { width:4px; }
-.list::-webkit-scrollbar-thumb { background: var(--panel-3); border-radius:4px; }
-
-.contact {
-  display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; transition:.15s; border-bottom:1px solid rgba(255,255,255,0.03);
-}
-.contact:hover { background: var(--panel-2); }
-.contact.active { background: var(--panel-3); }
-.contact-avatar {
-  width:48px;height:48px;border-radius:50%; background: linear-gradient(135deg, #2a3942, #33434f);
-  display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px; position:relative;
-}
-.online-ind { position:absolute; bottom:1px; right:1px; width:12px;height:12px;background:var(--green-light); border:2px solid var(--panel); border-radius:50%; }
-.contact-info { flex:1; min-width:0; }
-.contact-name { font-weight:500; font-size:15px; display:flex; align-items:center; gap:6px; }
-.contact-sub { font-size:13px; color:var(--text-sec); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
-.contact-time { font-size:11px; color:var(--text-sec); }
-.contact-badge { background: var(--green); color:white; font-size:11px; padding:2px 6px; border-radius:10px; font-weight:700; margin-left:6px; }
-
-.main {
-  flex:1; display:flex; flex-direction:column; background: #0b141a; position:relative;
-  background-image: 
-    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.03) 1px, transparent 0);
-  background-size: 32px 32px;
-}
-.empty-state {
-  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px; text-align:center;
-}
-.empty-illust {
-  width:320px; height:320px; background: radial-gradient(circle at center, rgba(0,168,132,0.12) 0%, transparent 70%);
-  border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:120px; margin-bottom:24px;
-}
-.empty-state h2 { font-size:28px; font-weight:300; margin-bottom:12px; color: var(--text); }
-.empty-state p { color: var(--text-sec); font-size:14px; max-width:420px; line-height:1.6; }
-
-.call-screen {
-  flex:1; display:none; flex-direction:column; align-items:center; justify-content:center; padding:40px; position:relative;
-}
-.call-screen.active { display:flex; }
-.call-avatar {
-  width:160px;height:160px;border-radius:50%;
-  background: linear-gradient(135deg, #1e3a33, #00a884);
-  display:flex; align-items:center; justify-content:center; font-size:64px; font-weight:700; color:white;
-  box-shadow: 0 20px 60px rgba(0,168,132,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
-  margin-bottom:28px; position:relative;
-}
-.call-avatar.ringing { animation: pulse 1.6s infinite; }
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(0,168,132,0.4), 0 20px 60px rgba(0,168,132,0.3) }
-  70% { box-shadow: 0 0 0 28px rgba(0,168,132,0), 0 20px 60px rgba(0,168,132,0.3) }
-  100% { box-shadow: 0 0 0 0 rgba(0,168,132,0), 0 20px 60px rgba(0,168,132,0.3) }
-}
-.call-name { font-size:32px; font-weight:600; margin-bottom:8px; }
-.call-status { font-size:16px; color: var(--text-sec); margin-bottom:8px; }
-.call-timer { font-size:28px; font-weight:300; font-family: 'JetBrains Mono', monospace; margin:16px 0; letter-spacing:1px; }
-.quality-bar {
-  display:flex; align-items:center; gap:12px; background: rgba(0,0,0,0.3); padding:10px 16px; border-radius:24px;
-  border:1px solid var(--border); margin:16px 0; font-size:12px;
-}
-.q-dot { width:8px;height:8px;border-radius:50%; }
-.q-excellent { background: var(--green-light); box-shadow:0 0 8px var(--green-light); }
-.q-good { background: var(--yellow); box-shadow:0 0 8px var(--yellow); }
-.q-poor { background: var(--red); box-shadow:0 0 8px var(--red); }
-.waveform { display:flex; align-items:center; gap:3px; height:32px; margin:12px 0; }
-.wave-bar { width:4px; background: var(--green); border-radius:4px; animation: wave 0.8s ease-in-out infinite; }
-@keyframes wave { 0%,100%{height:8px} 50%{height:28px} }
-
-.call-controls { display:flex; gap:16px; margin-top:32px; align-items:center; }
-.ctrl-btn {
-  width:56px;height:56px;border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
-  font-size:22px; transition:.2s; background: var(--panel-3); color: var(--text);
-}
-.ctrl-btn:hover { transform:scale(1.05); background: var(--panel-2); }
-.ctrl-btn.active { background: var(--text); color: var(--panel); }
-.ctrl-btn.end { width:64px;height:64px; background: var(--red); color:white; }
-.ctrl-btn.end:hover { background: #e04050; transform:scale(1.05); }
-.ctrl-btn.accept { width:64px;height:64px; background: var(--green); color:white; }
-.ctrl-btn.accept:hover { background: var(--green-light); }
-
-.incoming-overlay {
-  position:absolute; inset:0; background: rgba(11,20,26,0.96); backdrop-filter: blur(20px);
-  display:none; flex-direction:column; align-items:center; justify-content:center; z-index:20; padding:40px;
-}
-.incoming-overlay.active { display:flex; }
-
-.voicemail-recorder {
-  background: var(--panel); border:1px solid var(--border); border-radius:20px; padding:24px; width:100%; max-width:440px;
-  margin-top:24px; box-shadow: var(--shadow);
-}
-.vm-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-.vm-icon { width:40px;height:40px;background: linear-gradient(135deg, #ff5a6a, #ff8a9a); border-radius:12px; display:flex; align-items:center; justify-content:center; }
-.vm-title { font-weight:600; }
-.vm-sub { font-size:12px; color:var(--text-sec); }
-.vm-wave { height:60px; background: var(--panel-2); border-radius:12px; display:flex; align-items:center; justify-content:center; gap:2px; padding:0 16px; margin:16px 0; overflow:hidden; }
-.vm-time { font-family:'JetBrains Mono', monospace; font-size:24px; text-align:center; margin:8px 0; }
-.vm-actions { display:flex; gap:12px; margin-top:16px; }
-.btn { padding:12px 20px; border-radius:12px; border:none; font-weight:600; cursor:pointer; transition:.2s; font-size:14px; flex:1; display:flex; align-items:center; justify-content:center; gap:8px; }
-.btn-ghost { background: var(--panel-2); color: var(--text); }
-.btn-ghost:hover { background: var(--panel-3); }
-.btn-danger { background: var(--red); color:white; }
-.btn-success { background: var(--green); color:white; }
-.btn-success:hover { background: var(--green-light); }
-
-.voicemail-list-item {
-  background: var(--panel-2); border:1px solid var(--border); border-radius:16px; padding:16px; margin:12px 16px;
-  transition:.2s; cursor:pointer;
-}
-.voicemail-list-item:hover { background: var(--panel-3); transform: translateY(-1px); }
-.vm-item-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-.vm-from { font-weight:600; display:flex; align-items:center; gap:8px; }
-.vm-dot { width:8px;height:8px;background:var(--red);border-radius:50%; }
-.vm-date { font-size:12px; color:var(--text-sec); }
-.vm-player { display:flex; align-items:center; gap:12px; }
-.vm-play-btn { width:40px;height:40px;border-radius:50%; background: var(--green); border:none; color:white; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.2s; }
-.vm-play-btn:hover { background: var(--green-light); transform:scale(1.05); }
-.vm-progress { flex:1; height:4px; background: var(--panel-3); border-radius:4px; overflow:hidden; position:relative; }
-.vm-progress-fill { height:100%; background: var(--green); width:0%; transition:width 0.1s linear; }
-.vm-duration { font-size:12px; font-family:'JetBrains Mono', monospace; color:var(--text-sec); }
-
-.toast-container { position: fixed; bottom:24px; right:24px; z-index:200; display:flex; flex-direction:column; gap:12px; }
-.toast { background: var(--panel-2); border:1px solid var(--border); color: var(--text); padding:14px 18px; border-radius:12px; box-shadow: var(--shadow); display:flex; align-items:center; gap:12px; min-width:300px; animation: toastIn .3s ease; }
-@keyframes toastIn { from{transform:translateX(20px);opacity:0} to{transform:translateX(0);opacity:1} }
-.toast.success { border-left:3px solid var(--green); }
-.toast.error { border-left:3px solid var(--red); }
-.toast.info { border-left:3px solid var(--blue); }
-
-.specs { position:absolute; top:16px; right:16px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border:1px solid var(--border); border-radius:12px; padding:12px 16px; font-size:11px; min-width:180px; }
-.spec-row { display:flex; justify-content:space-between; margin:4px 0; }
-.spec-label { color: var(--text-sec); }
-.spec-val { font-family:'JetBrains Mono', monospace; color: var(--text); }
-
-@media (max-width: 768px) {
-  .sidebar { width:100%; position:absolute; z-index:10; transform: translateX(0); transition:.3s; }
-  .sidebar.hidden-mobile { transform: translateX(-100%); }
-  .main { width:100%; }
-  .call-avatar { width:120px;height:120px;font-size:48px; }
-}
-</style>
-</head>
-<body>
-
-<div id="loginScreen">
-  <div class="login-card">
-    <div class="logo">📞</div>
-    <h1>CallWave</h1>
-    <p>HD voice calls with smart answering machine. Crystal clear 48kHz Opus, noise suppression, and auto voicemail when you miss a call.</p>
-    <input id="usernameInput" class="input" placeholder="Enter your username (e.g. alice)" autocomplete="off" maxlength="20">
-    <button id="joinBtn" class="btn-primary">Start Calling →</button>
-    <div class="features">
-      <div class="feat"><div class="feat-icon">🎧</div><div><b>HD Voice</b> — 48kHz Opus, EC/NS/AGC</div></div>
-      <div class="feat"><div class="feat-icon">🤖</div><div><b>Smart Voicemail</b> — auto recording if no answer in 15s</div></div>
-      <div class="feat"><div class="feat-icon">📊</div><div><b>Quality Stats</b> — bitrate, packet loss, jitter live</div></div>
-    </div>
-  </div>
-</div>
-
-<div id="app">
-  <div class="sidebar" id="sidebar">
-    <div class="topbar">
-      <div class="user-info">
-        <div class="avatar" id="myAvatar">A</div>
-        <div class="user-meta">
-          <div class="name" id="myName">alice</div>
-          <div class="status"><span class="status-dot"></span> HD Voice Ready</div>
-        </div>
-      </div>
-      <div style="display:flex; gap:4px;">
-        <button class="icon-btn" title="Toggle stats" onclick="toggleStats()">📊</button>
-        <button class="icon-btn" title="Logout" onclick="location.reload()">⎋</button>
-      </div>
-    </div>
-
-    <div class="tabs">
-      <button class="tab active" data-tab="chats" onclick="switchTab('chats')">💬 Contacts</button>
-      <button class="tab" data-tab="history" onclick="switchTab('history')">🕘 History</button>
-      <button class="tab" data-tab="voicemail" onclick="switchTab('voicemail')">🎙️ Voicemail <span id="vmBadge" class="tab-badge" style="display:none;">0</span></button>
-    </div>
-
-    <div class="search-box">
-      <div class="search-inner">
-        <span>🔍</span><input id="searchInput" placeholder="Search contacts or voicemail" oninput="filterContacts()">
-      </div>
-    </div>
-
-    <div class="list" id="contactsList"></div>
-    <div class="list" id="historyList" style="display:none;"></div>
-    <div class="list" id="voicemailList" style="display:none;"></div>
-  </div>
-
-  <div class="main" id="main">
-    <div class="empty-state" id="emptyState">
-      <div class="empty-illust">🌊</div>
-      <h2>CallWave HD</h2>
-      <p>Select a contact to start an ultra-clear voice call. If they don't answer within 15 seconds, you'll be prompted to leave a smart voicemail — just like WhatsApp's voice message answering machine.</p>
-      <div style="margin-top:24px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
-        <div style="background:var(--panel); border:1px solid var(--border); padding:12px 16px; border-radius:12px; font-size:13px;">🔊 <b>48kHz</b> Opus Stereo</div>
-        <div style="background:var(--panel); border:1px solid var(--border); padding:12px 16px; border-radius:12px; font-size:13px;">🛡️ Echo Cancellation</div>
-        <div style="background:var(--panel); border:1px solid var(--border); padding:12px 16px; border-radius:12px; font-size:13px;">🎤 Noise Suppression</div>
-      </div>
-      <p style="margin-top:24px; font-size:12px; color:var(--text-sec);" class="mono">Open this page in two different browser windows with different usernames to test calling.</p>
-    </div>
-
-    <div class="call-screen" id="callScreen">
-      <div class="specs" id="statsPanel" style="display:none;">
-        <div style="font-weight:600; margin-bottom:8px; font-size:12px;">CALL QUALITY</div>
-        <div class="spec-row"><span class="spec-label">Codec</span><span class="spec-val">Opus / 48kHz</span></div>
-        <div class="spec-row"><span class="spec-label">Bitrate</span><span class="spec-val" id="statBitrate">-- kbps</span></div>
-        <div class="spec-row"><span class="spec-label">Packets Lost</span><span class="spec-val" id="statLoss">0</span></div>
-        <div class="spec-row"><span class="spec-label">Jitter</span><span class="spec-val" id="statJitter">-- ms</span></div>
-        <div class="spec-row"><span class="spec-label">RTT</span><span class="spec-val" id="statRtt">-- ms</span></div>
-        <div class="spec-row"><span class="spec-label">Mic Level</span><span class="spec-val" id="statMic">--</span></div>
-      </div>
-
-      <div class="call-avatar" id="callAvatar">A</div>
-      <div class="call-name" id="callName">Alice</div>
-      <div class="call-status" id="callStatus">Calling...</div>
-      <div class="waveform" id="waveform" style="display:none;">
-        <div class="wave-bar" style="animation-delay:0s"></div>
-        <div class="wave-bar" style="animation-delay:0.1s"></div>
-        <div class="wave-bar" style="animation-delay:0.2s"></div>
-        <div class="wave-bar" style="animation-delay:0.3s"></div>
-        <div class="wave-bar" style="animation-delay:0.1s"></div>
-        <div class="wave-bar" style="animation-delay:0.2s"></div>
-        <div class="wave-bar" style="animation-delay:0.3s"></div>
-      </div>
-      <div class="call-timer" id="callTimer">00:00</div>
-      
-      <div class="quality-bar" id="qualityBar">
-        <span class="q-dot q-excellent" id="qDot"></span>
-        <span id="qLabel">HD Voice • Excellent</span>
-        <span style="margin-left:8px; opacity:.6;" class="mono" id="qDetail">Opus 48kHz • EC ON</span>
-      </div>
-
-      <div class="call-controls" id="callControls">
-        <button class="ctrl-btn" id="muteBtn" onclick="toggleMute()" title="Mute">🎤</button>
-        <button class="ctrl-btn end" onclick="endCall()" title="End Call">📞</button>
-        <button class="ctrl-btn" onclick="toggleSpeaker()" title="Speaker">🔊</button>
-      </div>
-
-      <!-- Voicemail Recorder UI (appears when call goes to voicemail) -->
-      <div class="voicemail-recorder" id="voicemailRecorder" style="display:none;">
-        <div class="vm-header">
-          <div class="vm-icon">🎙️</div>
-          <div>
-            <div class="vm-title">Leave a Voicemail</div>
-            <div class="vm-sub" id="vmSub">They didn't answer — record a message</div>
-          </div>
-        </div>
-        <div class="vm-wave" id="vmWave">
-          <span style="font-size:13px; color:var(--text-sec);">🎧 Recording uses 48kHz Opus for smallest size, highest quality</span>
-        </div>
-        <div class="vm-time mono" id="vmTimer">00:00 / 01:00</div>
-        <div class="vm-actions">
-          <button class="btn btn-ghost" onclick="cancelVoicemail()">Cancel</button>
-          <button class="btn btn-danger" id="vmRecordBtn" onclick="toggleVoicemailRecord()">● Start Recording</button>
-          <button class="btn btn-success" id="vmSendBtn" onclick="sendVoicemail()" style="display:none;">Send ✓</button>
-        </div>
-      </div>
-
-      <div class="incoming-overlay" id="incomingOverlay">
-        <div class="call-avatar ringing" id="incomingAvatar">B</div>
-        <div class="call-name" id="incomingName">Bob is calling...</div>
-        <div class="call-status">Incoming HD Voice Call</div>
-        <div class="call-controls" style="margin-top:24px;">
-          <button class="ctrl-btn end" onclick="rejectCall(true)" title="Decline & send to voicemail">📵</button>
-          <button class="ctrl-btn" onclick="rejectCall(false)" title="Decline" style="background:var(--panel);">✕</button>
-          <button class="ctrl-btn accept" onclick="acceptCall()" title="Accept">📞</button>
-        </div>
-        <div style="margin-top:16px; font-size:13px; color:var(--text-sec);">Tap red phone icon to send caller directly to voicemail</div>
-      </div>
-    </div>
-  </div>
-</div>
-
+*{margin:0;padding:0;box-sizing:border-box}:root{--bg:#0b141a;--panel:#111b21;--panel-2:#202c33;--panel-3:#2a3942;--green:#00a884;--green-light:#06cf9c;--green-dark:#025144;--text:#e9edef;--text-sec:#8696a0;--border:#222d34;--red:#f15c6d;--blue:#53bdeb;--yellow:#febf2f;--shadow:0 8px 32px rgba(0,0,0,0.4)}body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}.mono{font-family:'JetBrains Mono',monospace}
+#loginScreen{position:fixed;inset:0;z-index:100;background:radial-gradient(1200px 600px at 20% -10%,#0f2e26 0%,var(--bg) 60%),radial-gradient(800px 400px at 90% 110%,#132a3a 0%,var(--bg) 70%);display:flex;align-items:center;justify-content:center}.login-card{width:360px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:32px;box-shadow:var(--shadow);animation:slideUp .5s ease}@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}.logo{width:56px;height:56px;background:linear-gradient(135deg,var(--green),var(--green-light));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:20px;box-shadow:0 8px 24px rgba(0,168,132,0.3)}.login-card h1{font-size:28px;font-weight:700;letter-spacing:-0.5px;margin-bottom:6px}.login-card p{color:var(--text-sec);font-size:14px;line-height:1.5;margin-bottom:24px}.input{width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:14px 16px;border-radius:12px;font-size:15px;outline:none;transition:.2s}.input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,168,132,0.15)}.btn-primary{width:100%;background:var(--green);color:white;border:none;padding:14px;border-radius:12px;font-weight:600;font-size:15px;cursor:pointer;transition:.2s;margin-top:16px}.btn-primary:hover{background:var(--green-light);transform:translateY(-1px)}.features{margin-top:24px;display:grid;gap:12px}.feat{display:flex;gap:12px;align-items:center;font-size:13px;color:var(--text-sec)}.feat-icon{width:32px;height:32px;background:var(--panel-2);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#app{display:none;height:100vh;flex-direction:row}#app.active{display:flex}.sidebar{width:380px;min-width:320px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh}.topbar{height:64px;background:var(--panel-2);display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border)}.user-info{display:flex;align-items:center;gap:12px}.avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1a4d3e,var(--green));display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:16px}.user-meta .name{font-weight:600;font-size:15px}.user-meta .status{font-size:12px;color:var(--green-light);display:flex;align-items:center;gap:4px}.status-dot{width:6px;height:6px;background:var(--green-light);border-radius:50%;display:inline-block;box-shadow:0 0 6px var(--green-light)}.icon-btn{width:36px;height:36px;border-radius:50%;background:transparent;border:none;color:var(--text-sec);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;font-size:18px}.icon-btn:hover{background:var(--panel-3);color:var(--text)}.tabs{display:flex;padding:8px;gap:8px;background:var(--panel);border-bottom:1px solid var(--border)}.tab{flex:1;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--text-sec);font-weight:500;font-size:13px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:6px}.tab.active{background:var(--panel-2);color:var(--text)}.tab-badge{background:var(--red);color:white;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:700}.search-box{padding:12px 16px}.search-inner{background:var(--panel-2);border-radius:12px;display:flex;align-items:center;gap:10px;padding:10px 14px}.search-inner input{background:transparent;border:none;outline:none;color:var(--text);flex:1;font-size:14px}.list{flex:1;overflow-y:auto}.list::-webkit-scrollbar{width:4px}.list::-webkit-scrollbar-thumb{background:var(--panel-3);border-radius:4px}.contact{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:.15s;border-bottom:1px solid rgba(255,255,255,0.03)}.contact:hover{background:var(--panel-2)}.contact-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#2a3942,#33434f);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:18px;position:relative}.online-ind{position:absolute;bottom:1px;right:1px;width:12px;height:12px;background:var(--green-light);border:2px solid var(--panel);border-radius:50%}.contact-info{flex:1;min-width:0}.contact-name{font-weight:500;font-size:15px;display:flex;align-items:center;gap:6px}.contact-sub{font-size:13px;color:var(--text-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.contact-time{font-size:11px;color:var(--text-sec)}
+.main{flex:1;display:flex;flex-direction:column;background:#0b141a;position:relative;background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,0.03) 1px,transparent 0);background-size:32px 32px}.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center}.empty-illust{width:320px;height:320px;background:radial-gradient(circle at center,rgba(0,168,132,0.12) 0%,transparent 70%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:120px;margin-bottom:24px}.empty-state h2{font-size:28px;font-weight:300;margin-bottom:12px;color:var(--text)}.empty-state p{color:var(--text-sec);font-size:14px;max-width:420px;line-height:1.6}.call-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px;position:relative}.call-screen.active{display:flex}.call-avatar{width:160px;height:160px;border-radius:50%;background:linear-gradient(135deg,#1e3a33,#00a884);display:flex;align-items:center;justify-content:center;font-size:64px;font-weight:700;color:white;box-shadow:0 20px 60px rgba(0,168,132,0.3),inset 0 1px 0 rgba(255,255,255,0.2);margin-bottom:28px;position:relative}.call-avatar.ringing{animation:pulse 1.6s infinite}@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,168,132,0.4),0 20px 60px rgba(0,168,132,0.3)}70%{box-shadow:0 0 0 28px rgba(0,168,132,0),0 20px 60px rgba(0,168,132,0.3)}100%{box-shadow:0 0 0 0 rgba(0,168,132,0),0 20px 60px rgba(0,168,132,0.3)}}.call-name{font-size:32px;font-weight:600;margin-bottom:8px}.call-status{font-size:16px;color:var(--text-sec);margin-bottom:8px}.call-timer{font-size:28px;font-weight:300;font-family:'JetBrains Mono',monospace;margin:16px 0;letter-spacing:1px}.quality-bar{display:flex;align-items:center;gap:12px;background:rgba(0,0,0,0.3);padding:10px 16px;border-radius:24px;border:1px solid var(--border);margin:16px 0;font-size:12px}.q-dot{width:8px;height:8px;border-radius:50%}.q-excellent{background:var(--green-light);box-shadow:0 0 8px var(--green-light)}.q-good{background:var(--yellow);box-shadow:0 0 8px var(--yellow)}.q-poor{background:var(--red);box-shadow:0 0 8px var(--red)}.waveform{display:flex;align-items:center;gap:3px;height:32px;margin:12px 0}.wave-bar{width:4px;background:var(--green);border-radius:4px;animation:wave 0.8s ease-in-out infinite}@keyframes wave{0%,100%{height:8px}50%{height:28px}}.call-controls{display:flex;gap:16px;margin-top:32px;align-items:center}.ctrl-btn{width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;transition:.2s;background:var(--panel-3);color:var(--text)}.ctrl-btn:hover{transform:scale(1.05);background:var(--panel-2)}.ctrl-btn.active{background:var(--text);color:var(--panel)}.ctrl-btn.end{width:64px;height:64px;background:var(--red);color:white}.ctrl-btn.accept{width:64px;height:64px;background:var(--green);color:white}.incoming-overlay{position:absolute;inset:0;background:rgba(11,20,26,0.96);backdrop-filter:blur(20px);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:20;padding:40px}.incoming-overlay.active{display:flex}.voicemail-recorder{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:440px;margin-top:24px;box-shadow:var(--shadow)}.vm-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}.vm-icon{width:40px;height:40px;background:linear-gradient(135deg,#ff5a6a,#ff8a9a);border-radius:12px;display:flex;align-items:center;justify-content:center}.vm-title{font-weight:600}.vm-sub{font-size:12px;color:var(--text-sec)}.vm-wave{height:60px;background:var(--panel-2);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:2px;padding:0 16px;margin:16px 0;overflow:hidden}.vm-time{font-family:'JetBrains Mono',monospace;font-size:24px;text-align:center;margin:8px 0}.vm-actions{display:flex;gap:12px;margin-top:16px}.btn{padding:12px 20px;border-radius:12px;border:none;font-weight:600;cursor:pointer;transition:.2s;font-size:14px;flex:1;display:flex;align-items:center;justify-content:center;gap:8px}.btn-ghost{background:var(--panel-2);color:var(--text)}.btn-danger{background:var(--red);color:white}.btn-success{background:var(--green);color:white}.voicemail-list-item{background:var(--panel-2);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 16px;transition:.2s;cursor:pointer}.vm-item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.vm-from{font-weight:600;display:flex;align-items:center;gap:8px}.vm-dot{width:8px;height:8px;background:var(--red);border-radius:50%}.vm-date{font-size:12px;color:var(--text-sec)}.vm-player{display:flex;align-items:center;gap:12px}.vm-play-btn{width:40px;height:40px;border-radius:50%;background:var(--green);border:none;color:white;display:flex;align-items:center;justify-content:center;cursor:pointer}.vm-progress{flex:1;height:4px;background:var(--panel-3);border-radius:4px;overflow:hidden}.vm-progress-fill{height:100%;background:var(--green);width:0%;transition:width 0.1s linear}.vm-duration{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text-sec)}.toast-container{position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column;gap:12px}.toast{background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:14px 18px;border-radius:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;min-width:300px;animation:toastIn .3s ease}@keyframes toastIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}.toast.success{border-left:3px solid var(--green)}.toast.error{border-left:3px solid var(--red)}.toast.info{border-left:3px solid var(--blue)}.specs{position:absolute;top:16px;right:16px;background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-size:11px;min-width:180px}.spec-row{display:flex;justify-content:space-between;margin:4px 0}.spec-label{color:var(--text-sec)}.spec-val{font-family:'JetBrains Mono',monospace;color:var(--text)}
+@media(max-width:768px){.sidebar{width:100%;position:absolute;z-index:10;transform:translateX(0);transition:.3s}.sidebar.hidden-mobile{transform:translateX(-100%)}.main{width:100%}.call-avatar{width:120px;height:120px;font-size:48px}}
+</style></head><body>
+<div id="loginScreen"><div class="login-card"><div class="logo">📞</div><h1>CallWave</h1><p>HD voice calls with smart answering machine. Crystal clear 48kHz Opus, noise suppression, and auto voicemail when you miss a call.</p><input id="usernameInput" class="input" placeholder="Enter your username (e.g. alice)" autocomplete="off" maxlength="20"><button id="joinBtn" class="btn-primary">Start Calling →</button><div class="features"><div class="feat"><div class="feat-icon">🎧</div><div><b>HD Voice</b> — 48kHz Opus + TURN</div></div><div class="feat"><div class="feat-icon">🤖</div><div><b>Smart Voicemail</b> — auto if no answer 15s</div></div><div class="feat"><div class="feat-icon">📊</div><div><b>Two-Way Fix</b> — v1.1 with TURN + ICE fix</div></div></div></div></div>
+<div id="app"><div class="sidebar" id="sidebar"><div class="topbar"><div class="user-info"><div class="avatar" id="myAvatar">A</div><div class="user-meta"><div class="name" id="myName">alice</div><div class="status"><span class="status-dot"></span> HD Voice Ready</div></div></div><div style="display:flex;gap:4px;"><button class="icon-btn" title="Toggle stats" onclick="toggleStats()">📊</button><button class="icon-btn" title="Logout" onclick="location.reload()">⎋</button></div></div><div class="tabs"><button class="tab active" data-tab="chats" onclick="switchTab('chats')">💬 Contacts</button><button class="tab" data-tab="history" onclick="switchTab('history')">🕘 History</button><button class="tab" data-tab="voicemail" onclick="switchTab('voicemail')">🎙️ Voicemail <span id="vmBadge" class="tab-badge" style="display:none;">0</span></button></div><div class="search-box"><div class="search-inner"><span>🔍</span><input id="searchInput" placeholder="Search" oninput="filterContacts()"></div></div><div class="list" id="contactsList"></div><div class="list" id="historyList" style="display:none;"></div><div class="list" id="voicemailList" style="display:none;"></div></div><div class="main" id="main"><div class="empty-state" id="emptyState"><div class="empty-illust">🌊</div><h2>CallWave HD v1.1</h2><p><b>Two-way audio fixed!</b> Select a contact to start call. Fixed ICE routing + added TURN servers for Render. If they hear you but you don't hear them, ensure both allow mic and click unmute.</p><div style="margin-top:16px;background:rgba(0,168,132,0.1);border:1px solid rgba(0,168,132,0.2);padding:12px;border-radius:12px;font-size:13px;">🔧 Fixes: TURN relay (openrelay.metered.ca), correct ICE target, proper offer/answer flow, autoplay unmute</div></div><div class="call-screen" id="callScreen"><div class="specs" id="statsPanel" style="display:none;"><div style="font-weight:600;margin-bottom:8px;font-size:12px;">CALL QUALITY</div><div class="spec-row"><span class="spec-label">Codec</span><span class="spec-val">Opus / 48kHz</span></div><div class="spec-row"><span class="spec-label">Bitrate</span><span class="spec-val" id="statBitrate">-- kbps</span></div><div class="spec-row"><span class="spec-label">Loss</span><span class="spec-val" id="statLoss">0</span></div><div class="spec-row"><span class="spec-label">Jitter</span><span class="spec-val" id="statJitter">-- ms</span></div><div class="spec-row"><span class="spec-label">RTT</span><span class="spec-val" id="statRtt">-- ms</span></div><div class="spec-row"><span class="spec-label">Mic</span><span class="spec-val" id="statMic">--</span></div><div class="spec-row"><span class="spec-label">ICE</span><span class="spec-val" id="statIce">--</span></div></div><div class="call-avatar" id="callAvatar">A</div><div class="call-name" id="callName">Alice</div><div class="call-status" id="callStatus">Calling...</div><div class="waveform" id="waveform" style="display:none;"><div class="wave-bar" style="animation-delay:0s"></div><div class="wave-bar" style="animation-delay:0.1s"></div><div class="wave-bar" style="animation-delay:0.2s"></div><div class="wave-bar" style="animation-delay:0.3s"></div></div><div class="call-timer" id="callTimer">00:00</div><div class="quality-bar" id="qualityBar"><span class="q-dot q-excellent" id="qDot"></span><span id="qLabel">HD Voice • Excellent</span><span class="mono" id="qDetail" style="margin-left:8px;opacity:.6;">TURN ready • EC ON</span></div><div class="call-controls" id="callControls"><button class="ctrl-btn" id="muteBtn" onclick="toggleMute()" title="Mute">🎤</button><button class="ctrl-btn end" onclick="endCall()" title="End">📞</button><button class="ctrl-btn" onclick="toggleSpeaker()" title="Speaker">🔊</button></div><div class="voicemail-recorder" id="voicemailRecorder" style="display:none;"><div class="vm-header"><div class="vm-icon">🎙️</div><div><div class="vm-title">Leave a Voicemail</div><div class="vm-sub" id="vmSub">They didn't answer</div></div></div><div class="vm-wave" id="vmWave"><span style="font-size:13px;color:var(--text-sec);">🎧 48kHz Opus</span></div><div class="vm-time mono" id="vmTimer">00:00 / 01:00</div><div class="vm-actions"><button class="btn btn-ghost" onclick="cancelVoicemail()">Cancel</button><button class="btn btn-danger" id="vmRecordBtn" onclick="toggleVoicemailRecord()">● Start Recording</button><button class="btn btn-success" id="vmSendBtn" onclick="sendVoicemail()" style="display:none;">Send ✓</button></div></div><div class="incoming-overlay" id="incomingOverlay"><div class="call-avatar ringing" id="incomingAvatar">B</div><div class="call-name" id="incomingName">Bob is calling...</div><div class="call-status">Incoming HD Voice Call</div><div class="call-controls" style="margin-top:24px;"><button class="ctrl-btn end" onclick="rejectCall(true)" title="Decline & voicemail">📵</button><button class="ctrl-btn" onclick="rejectCall(false)" style="background:var(--panel);">✕</button><button class="ctrl-btn accept" onclick="acceptCall()" title="Accept">📞</button></div></div></div></div></div>
 <div class="toast-container" id="toastContainer"></div>
-
 <audio id="remoteAudio" autoplay playsinline></audio>
-<audio id="ringtone" loop preload="auto">
-  <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRyAgAAAAEA" type="audio/wav">
-</audio>
-
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // ================== STATE ==================
-let socket = null;
-let myUsername = null;
-let peerConnection = null;
-let localStream = null;
-let remoteStream = null;
-let currentCall = null; // { callId, with, direction, status }
-let callTimerInterval = null;
-let callStartTime = null;
-let isMuted = false;
-let statsInterval = null;
-let missedTimeout = null;
-let activeTab = 'chats';
+let socket=null,myUsername=null,peerConnection=null,localStream=null,remoteStream=null,currentCall=null,callTimerInterval=null,callStartTime=null,isMuted=false,statsInterval=null,missedTimeout=null,activeTab='chats';
+let voicemailRecorder=null,voicemailChunks=[],voicemailBlob=null,voicemailTimer=null,voicemailSeconds=0,voicemailTarget=null;
+let contacts=[],history=[],voicemails=[];
+let pendingOffer=null, pendingOfferFrom=null, pendingOfferCallId=null;
+let pendingIceCandidates=[];
 
-let voicemailRecorder = null;
-let voicemailChunks = [];
-let voicemailBlob = null;
-let voicemailTimer = null;
-let voicemailSeconds = 0;
-let voicemailTarget = null;
-
-let contacts = []; // from server
-let history = [];
-let voicemails = [];
-
-// High quality audio constraints
-const AUDIO_CONSTRAINTS = {
-  audio: {
-    echoCancellation: { ideal: true },
-    noiseSuppression: { ideal: true },
-    autoGainControl: { ideal: true },
-    sampleRate: { ideal: 48000 },
-    channelCount: { ideal: 1 },
-    sampleSize: { ideal: 16 }
+const AUDIO_CONSTRAINTS={
+  audio:{
+    echoCancellation:{ideal:true},
+    noiseSuppression:{ideal:true},
+    autoGainControl:{ideal:true},
+    sampleRate:{ideal:48000},
+    channelCount:{ideal:1}
   },
-  video: false
+  video:false
 };
 
-const RTC_CONFIG = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' }
+// FIXED: Added TURN servers for one-way audio / symmetric NAT (Render needs TURN)
+const RTC_CONFIG={
+  iceServers:[
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:19302'},
+    {urls:'stun:stun2.l.google.com:19302'},
+    {urls:'stun:openrelay.metered.ca:80'},
+    {
+      urls:'turn:openrelay.metered.ca:80',
+      username:'openrelayproject',
+      credential:'openrelayproject'
+    },
+    {
+      urls:'turn:openrelay.metered.ca:443',
+      username:'openrelayproject',
+      credential:'openrelayproject'
+    },
+    {
+      urls:'turn:openrelay.metered.ca:443?transport=tcp',
+      username:'openrelayproject',
+      credential:'openrelayproject'
+    }
   ],
-  sdpSemantics: 'unified-plan'
+  sdpSemantics:'unified-plan',
+  iceTransportPolicy:'all'
 };
 
-// ================== INIT ==================
-document.getElementById('usernameInput').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') join();
-});
-document.getElementById('joinBtn').addEventListener('click', join);
+document.getElementById('usernameInput').addEventListener('keypress',e=>{if(e.key==='Enter')join()});
+document.getElementById('joinBtn').addEventListener('click',join);
 
-async function join() {
-  const input = document.getElementById('usernameInput');
-  const username = input.value.trim().toLowerCase();
-  if (!username || username.length < 2) {
-    toast('Please enter at least 2 characters', 'error');
-    return;
-  }
-  myUsername = username;
-  document.getElementById('myName').textContent = username;
-  document.getElementById('myAvatar').textContent = username[0].toUpperCase();
-  
-  // Connect socket
-  socket = io();
-  
-  socket.on('connect', () => {
-    socket.emit('user:join', { username });
-  });
-
+async function join(){
+  const input=document.getElementById('usernameInput');
+  const username=input.value.trim().toLowerCase();
+  if(!username||username.length<2){toast('Enter at least 2 chars','error');return;}
+  myUsername=username;
+  document.getElementById('myName').textContent=username;
+  document.getElementById('myAvatar').textContent=username[0].toUpperCase();
+  socket=io({transports:['websocket','polling']});
+  socket.on('connect',()=>{socket.emit('user:join',{username});});
   setupSocketListeners();
-  
-  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display='none';
   document.getElementById('app').classList.add('active');
-  
-  // Load initial data
-  fetchVoicemails();
-  fetchHistory();
-  
-  // Request mic permission early to show HD ready
-  try {
-    const s = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
-    s.getTracks().forEach(t => t.stop());
-    toast(`HD Voice ready • 48kHz Opus • Noise suppression ON`, 'success');
-  } catch (e) {
-    toast('Mic permission needed for HD calls', 'info');
-  }
+  fetchVoicemails();fetchHistory();
+  try{
+    const s=await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
+    s.getTracks().forEach(t=>t.stop());
+    toast(`HD Voice ready • TURN relay enabled • Opus 48kHz`,'success');
+  }catch(e){toast('Mic permission needed','info');}
 }
 
-function setupSocketListeners() {
-  socket.on('users:update', (users) => {
-    contacts = users.filter(u => u.username !== myUsername);
+function setupSocketListeners(){
+  socket.on('users:update',users=>{
+    contacts=users.filter(u=>u.username!==myUsername);
     renderContacts();
   });
-
-  socket.on('call:incoming', async (data) => {
-    // data: callId, from, fromSocket, to, timestamp
-    if (currentCall) {
-      // Busy - auto send to voicemail
-      socket.emit('call:reject', { callId: data.callId, from: data.from, to: myUsername, sendToVoicemail: true });
+  socket.on('call:incoming',async data=>{
+    if(currentCall){
+      socket.emit('call:reject',{callId:data.callId,from:data.from,to:myUsername,sendToVoicemail:true});
       return;
     }
-    currentCall = { callId: data.callId, with: data.from, direction: 'incoming', status: 'ringing' };
-    showIncomingCall(data.from, data.callId);
+    currentCall={callId:data.callId,with:data.from,direction:'incoming',status:'ringing'};
+    showIncomingCall(data.from,data.callId);
     playRingtone(true);
   });
-
-  socket.on('call:outgoing', (data) => {
-    currentCall = { callId: data.callId, with: data.to, direction: 'outgoing', status: 'calling' };
-    showOutgoingCall(data.to, data.callId);
-    // Auto voicemail fallback after 15s
+  socket.on('call:outgoing',async data=>{
+    // FIXED: set callId and create offer only after server gives callId
+    if(!currentCall) currentCall={callId:data.callId,with:data.to,direction:'outgoing',status:'calling'};
+    else {currentCall.callId=data.callId; currentCall.with=data.to; currentCall.status='calling';}
+    showOutgoingCall(data.to,data.callId);
     clearTimeout(missedTimeout);
-    missedTimeout = setTimeout(() => {
-      if (currentCall && currentCall.status === 'calling') {
-        socket.emit('call:missed-timeout', { callId: data.callId, from: myUsername, to: data.to });
-        goToVoicemail(data.to, 'No answer - 15s timeout');
+    missedTimeout=setTimeout(()=>{
+      if(currentCall&&currentCall.status==='calling'){
+        socket.emit('call:missed-timeout',{callId:data.callId,from:myUsername,to:data.to});
+        goToVoicemail(data.to,'No answer - 15s timeout');
       }
-    }, 15000);
-  });
+    },15000);
 
-  socket.on('call:accepted', async (data) => {
+    // Now create offer with correct target and callId
+    try{
+      if(!peerConnection){
+        await createPeerConnection(data.to,data.callId);
+      }
+      console.log('Creating offer for',data.to,data.callId);
+      const offer=await peerConnection.createOffer({offerToReceiveAudio:1,voiceActivityDetection:true});
+      offer.sdp=enhanceSDP(offer.sdp);
+      await peerConnection.setLocalDescription(offer);
+      socket.emit('webrtc:offer',{to:data.to,offer,callId:data.callId});
+      console.log('Offer sent');
+    }catch(e){
+      console.error('Offer failed',e);
+      toast('Failed to create offer: '+e.message,'error');
+    }
+  });
+  socket.on('call:accepted',async data=>{
     clearTimeout(missedTimeout);
-    toast(`${data.by} answered`, 'success');
-    if (currentCall) currentCall.status = 'ongoing';
+    toast(`${data.by} answered`,'success');
+    if(currentCall) currentCall.status='ongoing';
     playRingtone(false);
     startCallTimer();
-    document.getElementById('callStatus').textContent = 'Connected • HD Voice';
-    document.getElementById('waveform').style.display = 'flex';
+    document.getElementById('callStatus').textContent='Connected • HD Voice';
+    document.getElementById('waveform').style.display='flex';
   });
-
-  socket.on('call:rejected', (data) => {
+  socket.on('call:rejected',data=>{
     clearTimeout(missedTimeout);
     playRingtone(false);
-    if (data.goVoicemail) {
-      goToVoicemail(currentCall?.with, `${data.by} sent you to voicemail`);
-    } else {
-      toast(`${data.by} declined the call`, 'error');
-      endCallCleanup();
-    }
+    if(data.goVoicemail){goToVoicemail(currentCall?.with,`${data.by} sent you to voicemail`);}
+    else{toast(`${data.by} declined`,'error');endCallCleanup();}
   });
-
-  socket.on('call:failed', (data) => {
+  socket.on('call:failed',data=>{
     clearTimeout(missedTimeout);
-    toast(`${data.to} is offline • Leave voicemail?`, 'info');
-    goToVoicemail(data.to, 'User offline');
+    toast(`${data.to} is offline`,'info');
+    goToVoicemail(data.to,'User offline');
   });
-
-  socket.on('call:go-voicemail', (data) => {
+  socket.on('call:go-voicemail',data=>{
     clearTimeout(missedTimeout);
-    goToVoicemail(data.to, data.reason === 'offline' ? 'User offline' : data.reason === 'declined' ? 'Call declined' : 'No answer');
+    goToVoicemail(data.to,data.reason==='offline'?'User offline':data.reason==='declined'?'Call declined':'No answer');
   });
-
-  socket.on('call:ended', (data) => {
-    toast(`Call ended • ${data.duration || 0}s`, 'info');
+  socket.on('call:ended',data=>{
+    toast(`Call ended • ${data.duration||0}s`,'info');
     endCallCleanup();
   });
-
-  socket.on('webrtc:offer', async (data) => {
-    await handleOffer(data.offer, data.from, data.callId);
+  socket.on('webrtc:offer',async data=>{
+    console.log('Received offer from',data.from,data.callId);
+    await handleOffer(data.offer,data.from,data.callId);
   });
-  socket.on('webrtc:answer', async (data) => {
+  socket.on('webrtc:answer',async data=>{
+    console.log('Received answer from',data.from);
     await handleAnswer(data.answer);
   });
-  socket.on('webrtc:ice-candidate', async (data) => {
-    if (peerConnection && data.candidate) {
-      try { await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch(e) {}
+  socket.on('webrtc:ice-candidate',async data=>{
+    // Queue if PC not ready
+    if(!peerConnection || !peerConnection.remoteDescription){
+      console.log('Queuing ICE candidate (PC not ready)');
+      pendingIceCandidates.push(data);
+      return;
+    }
+    if(peerConnection && data.candidate){
+      try{await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate)); document.getElementById('statIce').textContent='ok';}catch(e){console.warn('ICE add failed',e);}
     }
   });
-
-  socket.on('voicemail:new', (vm) => {
+  socket.on('voicemail:new',vm=>{
     voicemails.unshift(vm);
-    renderVoicemails();
-    updateVMBadge();
-    toast(`New voicemail from ${vm.from} • ${vm.duration}s`, 'success');
-    // If on voicemail tab refresh
-    if (activeTab !== 'voicemail') {
-      // optional sound
-    }
+    renderVoicemails();updateVMBadge();
+    toast(`New voicemail from ${vm.from} • ${vm.duration}s`,'success');
   });
 }
 
-// ================== WebRTC ==================
-async function createPeerConnection(targetUsername, callId) {
-  peerConnection = new RTCPeerConnection(RTC_CONFIG);
-  
-  // Add transceiver for high quality
-  peerConnection.addTransceiver('audio', { direction: 'sendrecv' });
+// ================== WebRTC FIXED ==================
+async function createPeerConnection(targetUsername,callId){
+  // Close existing if any
+  if(peerConnection){
+    try{peerConnection.close();}catch(e){}
+    peerConnection=null;
+  }
+  pendingIceCandidates=[];
 
-  peerConnection.onicecandidate = (e) => {
-    if (e.candidate) {
-      socket.emit('webrtc:ice-candidate', { to: targetUsername, candidate: e.candidate, callId });
+  const configTarget = targetUsername || (currentCall?currentCall.with:null);
+  console.log('Creating PC for',configTarget,callId);
+
+  peerConnection=new RTCPeerConnection(RTC_CONFIG);
+
+  // FIXED: Proper ICE candidate routing - use target or currentCall.with
+  peerConnection.onicecandidate=e=>{
+    if(e.candidate){
+      const to = targetUsername || (currentCall?currentCall.with:null);
+      if(to){
+        console.log('Sending ICE to',to);
+        socket.emit('webrtc:ice-candidate',{to, candidate:e.candidate, callId: callId || (currentCall?currentCall.callId:null)});
+      }
+      document.getElementById('statIce').textContent=e.candidate.type||'new';
     }
   };
-  peerConnection.ontrack = (e) => {
-    remoteStream = e.streams[0];
-    const audio = document.getElementById('remoteAudio');
-    audio.srcObject = remoteStream;
-    audio.play().catch(()=>{});
+
+  // FIXED: Robust ontrack - ensure audio plays, volume up, not muted
+  peerConnection.ontrack=e=>{
+    console.log('ontrack received',e.streams.length, e.track.kind);
+    remoteStream=e.streams[0];
+    const audio=document.getElementById('remoteAudio');
+    audio.srcObject=remoteStream;
+    audio.volume=1.0;
+    audio.muted=false;
+    // Ensure autoplay works after user interaction
+    const playPromise=audio.play();
+    if(playPromise) playPromise.then(()=>console.log('remote audio playing')).catch(err=>{
+      console.warn('Autoplay blocked, trying again on interaction',err);
+      // Show button to unmute
+      document.getElementById('callStatus').textContent='Connected • Tap to hear audio';
+      document.getElementById('callStatus').onclick=()=>{audio.play(); document.getElementById('callStatus').onclick=null; document.getElementById('callStatus').textContent='Connected • HD Voice';};
+    });
+    document.getElementById('waveform').style.display='flex';
+    toast('Remote audio connected','success');
   };
-  peerConnection.onconnectionstatechange = () => {
-    console.log('connectionState', peerConnection.connectionState);
-    if (peerConnection.connectionState === 'failed' || peerConnection.connectionState === 'disconnected') {
-      updateQuality('poor', 'Connection unstable');
+
+  peerConnection.onconnectionstatechange=()=>{
+    console.log('connectionState',peerConnection.connectionState);
+    const stateEl=document.getElementById('statIce');
+    if(stateEl) stateEl.textContent=peerConnection.connectionState;
+    if(peerConnection.connectionState==='failed'||peerConnection.connectionState==='disconnected'){
+      updateQuality('poor','Connection unstable - checking TURN');
+      // Try ICE restart
+      if(peerConnection.connectionState==='failed'){
+        console.log('Attempting ICE restart');
+        peerConnection.restartIce();
+      }
     }
+    if(peerConnection.connectionState==='connected'){
+      updateQuality('excellent','HD Voice • Connected via '+ (peerConnection.iceConnectionState));
+      toast('Call fully connected • Two-way audio','success');
+    }
+  };
+
+  peerConnection.oniceconnectionstatechange=()=>{
+    console.log('iceConnectionState',peerConnection.iceConnectionState);
+    document.getElementById('statIce').textContent=peerConnection.iceConnectionState;
   };
 
   // Get local stream
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
-    // Enhance track
-    const track = localStream.getAudioTracks()[0];
-    if (track) {
-      // Apply constraints again for best quality
-      try { await track.applyConstraints({ echoCancellation:true, noiseSuppression:true, autoGainControl:true }); } catch(e){}
+  try{
+    if(!localStream){
+      localStream=await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
     }
-    localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
-    
-    // Mic level monitoring
+    const track=localStream.getAudioTracks()[0];
+    if(track){
+      try{await track.applyConstraints({echoCancellation:true,noiseSuppression:true,autoGainControl:true});}catch(e){}
+    }
+    // FIXED: Add tracks properly - don't add transceiver AND track duplicately
+    // We already have transceiver? Remove old transceiver logic, just addTrack
+    // Clear existing senders first? PC is fresh so no need
+    localStream.getTracks().forEach(t=>{
+      console.log('Adding local track',t.kind);
+      peerConnection.addTrack(t,localStream);
+    });
     setupMicMonitoring(localStream);
-    
-  } catch (err) {
-    toast('Microphone access denied: ' + err.message, 'error');
+  }catch(err){
+    toast('Mic access denied: '+err.message,'error');
     throw err;
   }
+  return peerConnection;
 }
 
-function setupMicMonitoring(stream) {
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const analyser = audioCtx.createAnalyser();
-    const source = audioCtx.createMediaStreamSource(stream);
+function setupMicMonitoring(stream){
+  try{
+    const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const analyser=audioCtx.createAnalyser();
+    const source=audioCtx.createMediaStreamSource(stream);
     source.connect(analyser);
-    analyser.fftSize = 256;
-    const data = new Uint8Array(analyser.frequencyBinCount);
-    setInterval(() => {
-      if (!localStream) return;
+    analyser.fftSize=256;
+    const data=new Uint8Array(analyser.frequencyBinCount);
+    setInterval(()=>{
+      if(!localStream) return;
       analyser.getByteFrequencyData(data);
-      let sum = 0; for(let v of data) sum+=v;
-      const level = Math.round((sum / data.length / 255)*100);
-      const el = document.getElementById('statMic');
-      if (el) el.textContent = level + '%';
-    }, 300);
-  } catch(e){}
+      let sum=0; for(let v of data) sum+=v;
+      const level=Math.round((sum/data.length/255)*100);
+      const el=document.getElementById('statMic');
+      if(el) el.textContent=level+'%';
+    },300);
+  }catch(e){}
 }
 
-async function makeCall(username) {
-  if (currentCall) { toast('Already in a call', 'error'); return; }
-  if (!socket) return;
-  
-  // Show UI immediately
-  currentCall = { callId: null, with: username, direction: 'outgoing', status: 'calling' };
-  showOutgoingCall(username, null);
-  
-  try {
-    // Create PC first to get offer
-    await createPeerConnection(null, null); // temp
-    // Actually we need callId from server, so signal initiate first
-    socket.emit('call:initiate', { to: username, from: myUsername });
-    
-    // Wait a bit for callId to be set via outgoing event, then create offer
-    setTimeout(async () => {
-      if (!peerConnection || !currentCall) return;
-      const offer = await peerConnection.createOffer({
-        offerToReceiveAudio: 1,
-        voiceActivityDetection: true
-      });
-      // Modify SDP for high quality Opus
-      offer.sdp = enhanceSDP(offer.sdp);
-      await peerConnection.setLocalDescription(offer);
-      socket.emit('webrtc:offer', { to: username, offer, callId: currentCall.callId });
-    }, 300);
-    
-  } catch (e) {
-    toast('Failed to start call: ' + e.message, 'error');
+async function makeCall(username){
+  if(currentCall){toast('Already in a call','error');return;}
+  if(!socket) return;
+  currentCall={callId:null,with:username,direction:'outgoing',status:'calling'};
+  showOutgoingCall(username,null);
+  try{
+    // FIXED: Don't create offer here, wait for call:outgoing which gives callId
+    await createPeerConnection(username,null);
+    socket.emit('call:initiate',{to:username,from:myUsername});
+  }catch(e){
+    toast('Failed to start call: '+e.message,'error');
     endCallCleanup();
   }
 }
 
-function enhanceSDP(sdp) {
-  // Force Opus with high bitrate and stereo off for voice quality
-  let newSDP = sdp;
-  // Set maxaveragebitrate for Opus
-  newSDP = newSDP.replace(/a=fmtp:111.*\r\n/g, 'a=fmtp:111 minptime=10;useinbandfec=1; maxaveragebitrate=51000; stereo=0; sprop-stereo=0; cbr=0\r\n');
-  // If not present, add
-  if (!newSDP.includes('maxaveragebitrate')) {
-    newSDP = newSDP.replace('a=rtpmap:111 opus/48000/2', 'a=rtpmap:111 opus/48000/2\r\na=fmtp:111 minptime=10;useinbandfec=1; maxaveragebitrate=51000; stereo=0; sprop-stereo=0');
+function enhanceSDP(sdp){
+  let newSDP=sdp;
+  newSDP=newSDP.replace(/a=fmtp:111.*\r\n/g,'a=fmtp:111 minptime=10;useinbandfec=1; maxaveragebitrate=51000; stereo=0; sprop-stereo=0; cbr=0\r\n');
+  if(!newSDP.includes('maxaveragebitrate')){
+    newSDP=newSDP.replace('a=rtpmap:111 opus/48000/2','a=rtpmap:111 opus/48000/2\r\na=fmtp:111 minptime=10;useinbandfec=1; maxaveragebitrate=51000; stereo=0; sprop-stereo=0');
   }
   return newSDP;
 }
 
-async function handleOffer(offer, from, callId) {
-  if (!currentCall) {
-    currentCall = { callId, with: from, direction: 'incoming', status: 'ringing' };
+// FIXED: Store offer until user accepts, don't answer immediately
+async function handleOffer(offer,from,callId){
+  console.log('handleOffer',from,callId,'currentCall',currentCall);
+  if(!currentCall){
+    currentCall={callId,with:from,direction:'incoming',status:'ringing'};
   }
-  // Create PC if not exists
-  if (!peerConnection) {
-    await createPeerConnection(from, callId);
+  // Store offer for when user accepts
+  pendingOffer=offer;
+  pendingOfferFrom=from;
+  pendingOfferCallId=callId;
+
+  if(currentCall.status==='ringing'){
+    console.log('Offer stored, waiting for user accept');
+    // Show incoming but don't answer yet
+    return;
   }
-  offer.sdp = enhanceSDP(offer.sdp);
-  await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-  const answer = await peerConnection.createAnswer();
-  answer.sdp = enhanceSDP(answer.sdp);
-  await peerConnection.setLocalDescription(answer);
-  socket.emit('webrtc:answer', { to: from, answer, callId });
-  
-  startStatsMonitoring();
+  // If already accepted (should not happen), answer immediately
+  if(currentCall.status==='ongoing'){
+    await processPendingOffer();
+  }
 }
 
-async function handleAnswer(answer) {
-  if (!peerConnection) return;
-  answer.sdp = enhanceSDP(answer.sdp);
-  await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-  startStatsMonitoring();
+async function processPendingOffer(){
+  if(!pendingOffer) return;
+  try{
+    if(!peerConnection){
+      await createPeerConnection(pendingOfferFrom,pendingOfferCallId);
+    }
+    pendingOffer.sdp=enhanceSDP(pendingOffer.sdp);
+    console.log('Setting remote offer');
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(pendingOffer));
+    console.log('Creating answer');
+    const answer=await peerConnection.createAnswer();
+    answer.sdp=enhanceSDP(answer.sdp);
+    await peerConnection.setLocalDescription(answer);
+    socket.emit('webrtc:answer',{to:pendingOfferFrom,answer,callId:pendingOfferCallId});
+    console.log('Answer sent');
+    // Process queued ICE candidates
+    for(const cand of pendingIceCandidates){
+      try{await peerConnection.addIceCandidate(new RTCIceCandidate(cand.candidate));}catch(e){console.warn('Queued ICE failed',e);}
+    }
+    pendingIceCandidates=[];
+    pendingOffer=null;
+    startStatsMonitoring();
+  }catch(e){
+    console.error('processPendingOffer failed',e);
+    toast('Failed to answer: '+e.message,'error');
+  }
 }
 
-function startStatsMonitoring() {
+async function handleAnswer(answer){
+  if(!peerConnection){console.warn('No PC for answer');return;}
+  try{
+    answer.sdp=enhanceSDP(answer.sdp);
+    console.log('Setting remote answer');
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    // Process queued ICE
+    for(const cand of pendingIceCandidates){
+      try{await peerConnection.addIceCandidate(new RTCIceCandidate(cand.candidate));}catch(e){}
+    }
+    pendingIceCandidates=[];
+    startStatsMonitoring();
+  }catch(e){console.error('handleAnswer failed',e);}
+}
+
+function startStatsMonitoring(){
   clearInterval(statsInterval);
-  statsInterval = setInterval(async () => {
-    if (!peerConnection) return;
-    try {
-      const stats = await peerConnection.getStats();
-      let bitrate = 0, packetsLost = 0, jitter = 0, rtt = 0;
-      stats.forEach(report => {
-        if (report.type === 'inbound-rtp' && report.kind === 'audio') {
-          packetsLost = report.packetsLost || 0;
-          jitter = report.jitter ? (report.jitter*1000).toFixed(0) : 0;
+  statsInterval=setInterval(async()=>{
+    if(!peerConnection) return;
+    try{
+      const stats=await peerConnection.getStats();
+      let bitrate=0,packetsLost=0,jitter=0,rtt=0;
+      stats.forEach(report=>{
+        if(report.type==='inbound-rtp'&&report.kind==='audio'){
+          packetsLost=report.packetsLost||0;
+          jitter=report.jitter?(report.jitter*1000).toFixed(0):0;
         }
-        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
-          rtt = report.currentRoundTripTime ? (report.currentRoundTripTime*1000).toFixed(0) : 0;
+        if(report.type==='candidate-pair'&&report.state==='succeeded'){
+          rtt=report.currentRoundTripTime?(report.currentRoundTripTime*1000).toFixed(0):0;
         }
-        if (report.type === 'outbound-rtp' && report.kind === 'audio') {
-          bitrate = report.bytesSent ? Math.round((report.bytesSent*8/ (callStartTime ? (Date.now()-callStartTime)/1000 : 1))/1000) : 0;
+        if(report.type==='outbound-rtp'&&report.kind==='audio'){
+          bitrate=report.bytesSent?Math.round((report.bytesSent*8/(callStartTime?(Date.now()-callStartTime)/1000:1))/1000):0;
         }
       });
-      document.getElementById('statBitrate').textContent = (bitrate || 48) + ' kbps';
-      document.getElementById('statLoss').textContent = packetsLost;
-      document.getElementById('statJitter').textContent = jitter + ' ms';
-      document.getElementById('statRtt').textContent = rtt + ' ms';
-      
-      // Update quality indicator
-      let quality = 'excellent', label = 'HD Voice • Excellent';
-      if (packetsLost > 10 || rtt > 300 || jitter > 50) { quality='poor'; label='Poor • Unstable'; }
-      else if (packetsLost > 2 || rtt > 150 || jitter > 20) { quality='good'; label='Good • Stable'; }
-      updateQuality(quality, label);
-    } catch(e){}
-  }, 1000);
+      document.getElementById('statBitrate').textContent=(bitrate||48)+' kbps';
+      document.getElementById('statLoss').textContent=packetsLost;
+      document.getElementById('statJitter').textContent=jitter+' ms';
+      document.getElementById('statRtt').textContent=rtt+' ms';
+      let quality='excellent',label='HD Voice • Excellent';
+      if(packetsLost>10||rtt>300||jitter>50){quality='poor';label='Poor • TURN?';}
+      else if(packetsLost>2||rtt>150||jitter>20){quality='good';label='Good • Stable';}
+      updateQuality(quality,label);
+    }catch(e){}
+  },1000);
 }
-
-function updateQuality(level, label) {
-  const dot = document.getElementById('qDot');
-  const lbl = document.getElementById('qLabel');
-  if (!dot || !lbl) return;
-  dot.className = 'q-dot q-' + level;
-  lbl.textContent = label;
+function updateQuality(level,label){
+  const dot=document.getElementById('qDot');
+  const lbl=document.getElementById('qLabel');
+  if(!dot||!lbl) return;
+  dot.className='q-dot q-'+level;
+  lbl.textContent=label;
 }
-
-// ================== UI HELPERS ==================
-function showOutgoingCall(username, callId) {
-  document.getElementById('emptyState').style.display = 'none';
+function showOutgoingCall(username,callId){
+  document.getElementById('emptyState').style.display='none';
   document.getElementById('callScreen').classList.add('active');
-  document.getElementById('callAvatar').textContent = username[0].toUpperCase();
-  document.getElementById('callName').textContent = username;
-  document.getElementById('callStatus').textContent = 'Calling...';
+  document.getElementById('callAvatar').textContent=username[0].toUpperCase();
+  document.getElementById('callName').textContent=username;
+  document.getElementById('callStatus').textContent='Calling...';
   document.getElementById('callAvatar').classList.add('ringing');
-  document.getElementById('callTimer').textContent = '00:00';
-  document.getElementById('voicemailRecorder').style.display = 'none';
+  document.getElementById('callTimer').textContent='00:00';
+  document.getElementById('voicemailRecorder').style.display='none';
   document.getElementById('incomingOverlay').classList.remove('active');
-  document.getElementById('callControls').style.display = 'flex';
-  if (callId && currentCall) currentCall.callId = callId;
+  document.getElementById('callControls').style.display='flex';
+  if(callId&&currentCall) currentCall.callId=callId;
 }
-
-function showIncomingCall(username, callId) {
-  document.getElementById('emptyState').style.display = 'none';
+function showIncomingCall(username,callId){
+  document.getElementById('emptyState').style.display='none';
   document.getElementById('callScreen').classList.add('active');
   document.getElementById('incomingOverlay').classList.add('active');
-  document.getElementById('incomingAvatar').textContent = username[0].toUpperCase();
-  document.getElementById('incomingName').textContent = username + ' is calling...';
-  document.getElementById('callAvatar').textContent = username[0].toUpperCase();
-  document.getElementById('callName').textContent = username;
-  document.getElementById('callStatus').textContent = 'Incoming HD Voice Call';
-  if (currentCall) currentCall.callId = callId;
+  document.getElementById('incomingAvatar').textContent=username[0].toUpperCase();
+  document.getElementById('incomingName').textContent=username+' is calling...';
+  document.getElementById('callAvatar').textContent=username[0].toUpperCase();
+  document.getElementById('callName').textContent=username;
+  document.getElementById('callStatus').textContent='Incoming HD Voice Call';
+  if(currentCall) currentCall.callId=callId;
 }
-
-async function acceptCall() {
-  if (!currentCall) return;
+async function acceptCall(){
+  if(!currentCall) return;
   playRingtone(false);
   document.getElementById('incomingOverlay').classList.remove('active');
   document.getElementById('callAvatar').classList.remove('ringing');
-  document.getElementById('callStatus').textContent = 'Connecting HD Voice...';
-  if (!peerConnection) {
-    await createPeerConnection(currentCall.with, currentCall.callId);
-    // We already got offer, answer was sent in handleOffer so if offer arrived we answered
-    // If offer hasn't arrived yet, wait - handleOffer will create answer
-    if (peerConnection && peerConnection.remoteDescription) {
-      // already answered
-    }
-  }
-  currentCall.status = 'ongoing';
-  socket.emit('call:accept', { callId: currentCall.callId, from: currentCall.with, to: myUsername });
+  document.getElementById('callStatus').textContent='Connecting HD Voice...';
+  currentCall.status='ongoing';
+  // FIXED: Process pending offer now that user accepted
+  await processPendingOffer();
+  socket.emit('call:accept',{callId:currentCall.callId,from:currentCall.with,to:myUsername});
   startCallTimer();
-  document.getElementById('waveform').style.display = 'flex';
-  document.getElementById('callStatus').textContent = 'Connected • HD Voice';
-  toast('Call connected — HD Voice active', 'success');
+  document.getElementById('waveform').style.display='flex';
+  document.getElementById('callStatus').textContent='Connected • HD Voice';
+  toast('Call connected — two-way audio','success');
 }
-
-function rejectCall(sendToVoicemail) {
-  if (!currentCall) return;
+function rejectCall(sendToVoicemail){
+  if(!currentCall) return;
   playRingtone(false);
-  socket.emit('call:reject', { 
-    callId: currentCall.callId, 
-    from: currentCall.with, 
-    to: myUsername,
-    sendToVoicemail
-  });
-  if (sendToVoicemail) toast('Sent caller to voicemail', 'info');
+  socket.emit('call:reject',{callId:currentCall.callId,from:currentCall.with,to:myUsername,sendToVoicemail});
+  if(sendToVoicemail) toast('Sent to voicemail','info');
   endCallCleanup();
 }
-
-function endCall() {
-  if (!currentCall) return;
-  const duration = callStartTime ? Math.round((Date.now() - callStartTime)/1000) : 0;
-  socket.emit('call:end', { 
-    callId: currentCall.callId, 
-    from: myUsername, 
-    to: currentCall.with,
-    duration
-  });
+function endCall(){
+  if(!currentCall) return;
+  const duration=callStartTime?Math.round((Date.now()-callStartTime)/1000):0;
+  socket.emit('call:end',{callId:currentCall.callId,from:myUsername,to:currentCall.with,duration});
   endCallCleanup();
-  toast(`Call ended • ${duration}s`, 'info');
+  toast(`Call ended • ${duration}s`,'info');
 }
-
-function endCallCleanup() {
-  clearInterval(callTimerInterval);
-  clearInterval(statsInterval);
-  clearTimeout(missedTimeout);
+function endCallCleanup(){
+  clearInterval(callTimerInterval);clearInterval(statsInterval);clearTimeout(missedTimeout);
   playRingtone(false);
-  
-  if (peerConnection) {
-    peerConnection.close();
-    peerConnection = null;
-  }
-  if (localStream) {
-    localStream.getTracks().forEach(t => t.stop());
-    localStream = null;
-  }
-  const remoteAudio = document.getElementById('remoteAudio');
-  remoteAudio.srcObject = null;
-  
-  currentCall = null;
-  callStartTime = null;
-  
+  if(peerConnection){try{peerConnection.close();}catch(e){} peerConnection=null;}
+  if(localStream){localStream.getTracks().forEach(t=>t.stop()); localStream=null;}
+  const remoteAudio=document.getElementById('remoteAudio');
+  remoteAudio.srcObject=null;
+  currentCall=null;callStartTime=null;pendingOffer=null;pendingIceCandidates=[];
   document.getElementById('callScreen').classList.remove('active');
-  document.getElementById('emptyState').style.display = 'flex';
-  document.getElementById('voicemailRecorder').style.display = 'none';
+  document.getElementById('emptyState').style.display='flex';
+  document.getElementById('voicemailRecorder').style.display='none';
   document.getElementById('incomingOverlay').classList.remove('active');
   document.getElementById('callAvatar').classList.remove('ringing');
-  document.getElementById('waveform').style.display = 'none';
-  
+  document.getElementById('waveform').style.display='none';
   fetchHistory();
 }
-
-function startCallTimer() {
-  callStartTime = Date.now();
+function startCallTimer(){
+  callStartTime=Date.now();
   clearInterval(callTimerInterval);
-  callTimerInterval = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - callStartTime)/1000);
-    const m = String(Math.floor(elapsed/60)).padStart(2,'0');
-    const s = String(elapsed%60).padStart(2,'0');
-    document.getElementById('callTimer').textContent = `${m}:${s}`;
-  }, 1000);
+  callTimerInterval=setInterval(()=>{
+    const elapsed=Math.floor((Date.now()-callStartTime)/1000);
+    const m=String(Math.floor(elapsed/60)).padStart(2,'0');
+    const s=String(elapsed%60).padStart(2,'0');
+    document.getElementById('callTimer').textContent=`${m}:${s}`;
+  },1000);
 }
-
-function toggleMute() {
-  if (!localStream) return;
-  const track = localStream.getAudioTracks()[0];
-  if (!track) return;
-  track.enabled = !track.enabled;
-  isMuted = !track.enabled;
-  const btn = document.getElementById('muteBtn');
-  btn.textContent = isMuted ? '🔇' : '🎤';
-  btn.classList.toggle('active', isMuted);
-  toast(isMuted ? 'Mic muted' : 'Mic unmuted', 'info');
+function toggleMute(){
+  if(!localStream) return;
+  const track=localStream.getAudioTracks()[0];
+  if(!track) return;
+  track.enabled=!track.enabled;
+  isMuted=!track.enabled;
+  const btn=document.getElementById('muteBtn');
+  btn.textContent=isMuted?'🔇':'🎤';
+  btn.classList.toggle('active',isMuted);
+  toast(isMuted?'Mic muted':'Mic unmuted','info');
 }
-
-function toggleSpeaker() {
-  toast('Speaker is default on web — use system volume', 'info');
+function toggleSpeaker(){toast('Speaker is system volume','info');}
+function toggleStats(){
+  const panel=document.getElementById('statsPanel');
+  panel.style.display=panel.style.display==='none'?'block':'none';
 }
-function toggleStats() {
-  const panel = document.getElementById('statsPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+function playRingtone(play){
+  if(!window._ringCtx) window._ringCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(play){
+    if(window._ringInterval) return;
+    window._ringInterval=setInterval(()=>{
+      try{
+        const osc=window._ringCtx.createOscillator();
+        const gain=window._ringCtx.createGain();
+        osc.type='sine';osc.frequency.value=440;
+        osc.connect(gain);gain.connect(window._ringCtx.destination);
+        gain.gain.setValueAtTime(0.1,window._ringCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01,window._ringCtx.currentTime+0.8);
+        osc.start();osc.stop(window._ringCtx.currentTime+0.8);
+      }catch(e){}
+    },1200);
+  }else{clearInterval(window._ringInterval);window._ringInterval=null;}
 }
-
-function playRingtone(play) {
-  // Use Web Audio for ringtone beep
-  if (!window._ringCtx) window._ringCtx = new (window.AudioContext||window.webkitAudioContext)();
-  if (play) {
-    if (window._ringInterval) return;
-    window._ringInterval = setInterval(() => {
-      try {
-        const osc = window._ringCtx.createOscillator();
-        const gain = window._ringCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = 440;
-        osc.connect(gain); gain.connect(window._ringCtx.destination);
-        gain.gain.setValueAtTime(0.1, window._ringCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, window._ringCtx.currentTime+0.8);
-        osc.start(); osc.stop(window._ringCtx.currentTime+0.8);
-      } catch(e){}
-    }, 1200);
-  } else {
-    clearInterval(window._ringInterval);
-    window._ringInterval = null;
-  }
-}
-
-// ================== VOICEMAIL ==================
-function goToVoicemail(target, reason) {
-  voicemailTarget = target;
-  document.getElementById('emptyState').style.display = 'none';
+function goToVoicemail(target,reason){
+  voicemailTarget=target;
+  document.getElementById('emptyState').style.display='none';
   document.getElementById('callScreen').classList.add('active');
-  document.getElementById('callAvatar').textContent = target[0].toUpperCase();
-  document.getElementById('callName').textContent = target;
-  document.getElementById('callStatus').textContent = reason || 'No answer';
-  document.getElementById('callControls').style.display = 'none';
-  document.getElementById('voicemailRecorder').style.display = 'block';
-  document.getElementById('vmSub').textContent = reason === 'User offline' ? `${target} is offline — leave a voicemail` : `${target} didn't answer — leave a voicemail (max 60s)`;
+  document.getElementById('callAvatar').textContent=target[0].toUpperCase();
+  document.getElementById('callName').textContent=target;
+  document.getElementById('callStatus').textContent=reason||'No answer';
+  document.getElementById('callControls').style.display='none';
+  document.getElementById('voicemailRecorder').style.display='block';
+  document.getElementById('vmSub').textContent=reason==='User offline'?`${target} is offline`:`${target} didn't answer — voicemail 60s`;
   document.getElementById('callAvatar').classList.remove('ringing');
-  
-  // Cleanup previous call connection, keep app ready for recording
-  if (peerConnection) { peerConnection.close(); peerConnection=null; }
-  if (localStream) { localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
-  clearInterval(callTimerInterval);
-  playRingtone(false);
-  
+  if(peerConnection){try{peerConnection.close();}catch(e){} peerConnection=null;}
+  if(localStream){localStream.getTracks().forEach(t=>t.stop()); localStream=null;}
+  clearInterval(callTimerInterval);playRingtone(false);
   resetVoicemailRecorder();
 }
-
-function resetVoicemailRecorder() {
-  voicemailChunks = []; voicemailBlob = null; voicemailSeconds = 0;
-  document.getElementById('vmTimer').textContent = '00:00 / 01:00';
-  document.getElementById('vmRecordBtn').style.display = 'flex';
-  document.getElementById('vmRecordBtn').textContent = '● Start Recording';
-  document.getElementById('vmRecordBtn').className = 'btn btn-danger';
-  document.getElementById('vmSendBtn').style.display = 'none';
-  document.getElementById('vmWave').innerHTML = '<span style="font-size:13px; color:var(--text-sec);">🎧 Recording uses 48kHz Opus for smallest size, highest quality</span>';
+function resetVoicemailRecorder(){
+  voicemailChunks=[];voicemailBlob=null;voicemailSeconds=0;
+  document.getElementById('vmTimer').textContent='00:00 / 01:00';
+  document.getElementById('vmRecordBtn').style.display='flex';
+  document.getElementById('vmRecordBtn').textContent='● Start Recording';
+  document.getElementById('vmRecordBtn').className='btn btn-danger';
+  document.getElementById('vmSendBtn').style.display='none';
+  document.getElementById('vmWave').innerHTML='<span style=\"font-size:13px;color:var(--text-sec);\">🎧 48kHz Opus</span>';
   clearInterval(voicemailTimer);
 }
-
-async function toggleVoicemailRecord() {
-  const btn = document.getElementById('vmRecordBtn');
-  if (voicemailRecorder && voicemailRecorder.state === 'recording') {
-    voicemailRecorder.stop();
-    clearInterval(voicemailTimer);
-    btn.textContent = '● Start Recording';
-    btn.className = 'btn btn-danger';
-    return;
+async function toggleVoicemailRecord(){
+  const btn=document.getElementById('vmRecordBtn');
+  if(voicemailRecorder&&voicemailRecorder.state==='recording'){
+    voicemailRecorder.stop();clearInterval(voicemailTimer);
+    btn.textContent='● Start Recording';btn.className='btn btn-danger';return;
   }
-  // Start
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
-    voicemailRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-    voicemailChunks = [];
-    voicemailRecorder.ondataavailable = e => { if (e.data.size>0) voicemailChunks.push(e.data); };
-    voicemailRecorder.onstop = () => {
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
+    voicemailRecorder=new MediaRecorder(stream,{mimeType:'audio/webm;codecs=opus'});
+    voicemailChunks=[];
+    voicemailRecorder.ondataavailable=e=>{if(e.data.size>0)voicemailChunks.push(e.data);};
+    voicemailRecorder.onstop=()=>{
       stream.getTracks().forEach(t=>t.stop());
-      voicemailBlob = new Blob(voicemailChunks, { type: 'audio/webm' });
-      document.getElementById('vmSendBtn').style.display = 'flex';
-      document.getElementById('vmWave').innerHTML = `<div style="color:var(--green-light);">✅ Recorded ${voicemailSeconds}s • ${(voicemailBlob.size/1024).toFixed(1)} KB • Ready to send</div>`;
-      toast('Voicemail recorded — tap Send', 'success');
+      voicemailBlob=new Blob(voicemailChunks,{type:'audio/webm'});
+      document.getElementById('vmSendBtn').style.display='flex';
+      document.getElementById('vmWave').innerHTML=`<div style=\"color:var(--green-light);\">✅ ${voicemailSeconds}s • ${(voicemailBlob.size/1024).toFixed(1)} KB</div>`;
+      toast('Voicemail recorded','success');
     };
-    voicemailRecorder.start(100);
-    voicemailSeconds = 0;
-    document.getElementById('vmTimer').textContent = '00:00 / 01:00';
-    btn.textContent = '■ Stop Recording';
-    btn.className = 'btn btn-ghost';
-    
-    // Visual wave
-    const waveEl = document.getElementById('vmWave');
-    waveEl.innerHTML = '';
-    for(let i=0;i<24;i++){
-      const bar = document.createElement('div');
-      bar.style.width='4px'; bar.style.height='12px'; bar.style.background='var(--green)'; bar.style.borderRadius='4px'; bar.style.transition='height 0.1s';
-      waveEl.appendChild(bar);
-    }
-    // Animate bars
-    const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    const analyser = audioCtx.createAnalyser();
-    const source = audioCtx.createMediaStreamSource(stream);
-    source.connect(analyser);
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    const anim = setInterval(()=>{
-      if (!voicemailRecorder || voicemailRecorder.state!=='recording') { clearInterval(anim); return; }
-      analyser.getByteFrequencyData(dataArray);
-      [...waveEl.children].forEach((bar, idx)=>{
-        const v = dataArray[idx*2] || 0;
-        bar.style.height = (8 + (v/255)*36) + 'px';
-        bar.style.opacity = 0.6 + (v/255)*0.4;
-      });
-    }, 80);
-    
-    voicemailTimer = setInterval(()=>{
-      voicemailSeconds++;
-      const m = String(Math.floor(voicemailSeconds/60)).padStart(2,'0');
-      const s = String(voicemailSeconds%60).padStart(2,'0');
-      document.getElementById('vmTimer').textContent = `${m}:${s} / 01:00`;
-      if (voicemailSeconds>=60) toggleVoicemailRecord();
-    },1000);
-    
-  } catch(e){
-    toast('Mic needed for voicemail: '+e.message, 'error');
-  }
+    voicemailRecorder.start(100);voicemailSeconds=0;
+    document.getElementById('vmTimer').textContent='00:00 / 01:00';
+    btn.textContent='■ Stop';btn.className='btn btn-ghost';
+    const waveEl=document.getElementById('vmWave');waveEl.innerHTML='';
+    for(let i=0;i<24;i++){const bar=document.createElement('div');bar.style.width='4px';bar.style.height='12px';bar.style.background='var(--green)';bar.style.borderRadius='4px';bar.style.transition='height 0.1s';waveEl.appendChild(bar);}
+    const audioCtx=new (window.AudioContext||window.webkitAudioContext)();const analyser=audioCtx.createAnalyser();const source=audioCtx.createMediaStreamSource(stream);source.connect(analyser);const dataArray=new Uint8Array(analyser.frequencyBinCount);
+    const anim=setInterval(()=>{if(!voicemailRecorder||voicemailRecorder.state!=='recording'){clearInterval(anim);return;}analyser.getByteFrequencyData(dataArray);[...waveEl.children].forEach((bar,idx)=>{const v=dataArray[idx*2]||0;bar.style.height=(8+(v/255)*36)+'px';bar.style.opacity=0.6+(v/255)*0.4;});},80);
+    voicemailTimer=setInterval(()=>{voicemailSeconds++;const m=String(Math.floor(voicemailSeconds/60)).padStart(2,'0');const s=String(voicemailSeconds%60).padStart(2,'0');document.getElementById('vmTimer').textContent=`${m}:${s} / 01:00`;if(voicemailSeconds>=60)toggleVoicemailRecord();},1000);
+  }catch(e){toast('Mic needed: '+e.message,'error');}
 }
-
-function cancelVoicemail() {
-  if (voicemailRecorder && voicemailRecorder.state==='recording') voicemailRecorder.stop();
-  clearInterval(voicemailTimer);
-  voicemailTarget = null;
-  document.getElementById('voicemailRecorder').style.display = 'none';
-  document.getElementById('callControls').style.display = 'flex';
-  endCallCleanup();
+function cancelVoicemail(){if(voicemailRecorder&&voicemailRecorder.state==='recording')voicemailRecorder.stop();clearInterval(voicemailTimer);voicemailTarget=null;document.getElementById('voicemailRecorder').style.display='none';document.getElementById('callControls').style.display='flex';endCallCleanup();}
+async function sendVoicemail(){
+  if(!voicemailBlob||!voicemailTarget){toast('Record first','error');return;}
+  const btn=document.getElementById('vmSendBtn');btn.textContent='Sending...';btn.disabled=true;
+  const form=new FormData();form.append('audio',voicemailBlob,'voicemail.webm');form.append('from',myUsername);form.append('to',voicemailTarget);form.append('duration',voicemailSeconds);
+  try{const res=await fetch('/api/upload-voicemail',{method:'POST',body:form});const data=await res.json();if(data.success){toast(`Voicemail sent to ${voicemailTarget}`,'success');document.getElementById('voicemailRecorder').style.display='none';voicemailTarget=null;endCallCleanup();}else throw new Error(data.error||'Failed');}catch(e){toast('Failed: '+e.message,'error');}finally{btn.textContent='Send ✓';btn.disabled=false;}
 }
-
-async function sendVoicemail() {
-  if (!voicemailBlob || !voicemailTarget) { toast('Record something first', 'error'); return; }
-  const btn = document.getElementById('vmSendBtn');
-  btn.textContent = 'Sending...'; btn.disabled = true;
-  
-  const form = new FormData();
-  form.append('audio', voicemailBlob, 'voicemail.webm');
-  form.append('from', myUsername);
-  form.append('to', voicemailTarget);
-  form.append('duration', voicemailSeconds);
-  
-  try {
-    const res = await fetch('/api/upload-voicemail', { method:'POST', body: form });
-    const data = await res.json();
-    if (data.success) {
-      toast(`Voicemail sent to ${voicemailTarget} • ${voicemailSeconds}s`, 'success');
-      document.getElementById('voicemailRecorder').style.display = 'none';
-      voicemailTarget = null;
-      endCallCleanup();
-    } else throw new Error(data.error||'Failed');
-  } catch(e){
-    toast('Failed to send voicemail: '+e.message, 'error');
-  } finally {
-    btn.textContent = 'Send ✓'; btn.disabled=false;
-  }
+function switchTab(tab){
+  activeTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.getElementById('contactsList').style.display=tab==='chats'?'block':'none';
+  document.getElementById('historyList').style.display=tab==='history'?'block':'none';
+  document.getElementById('voicemailList').style.display=tab==='voicemail'?'block':'none';
+  if(tab==='history')fetchHistory();
+  if(tab==='voicemail')fetchVoicemails();
 }
-
-// ================== CONTACTS / HISTORY / VM LIST ==================
-function switchTab(tab) {
-  activeTab = tab;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
-  document.getElementById('contactsList').style.display = tab==='chats' ? 'block' : 'none';
-  document.getElementById('historyList').style.display = tab==='history' ? 'block' : 'none';
-  document.getElementById('voicemailList').style.display = tab==='voicemail' ? 'block' : 'none';
-  if (tab==='history') fetchHistory();
-  if (tab==='voicemail') fetchVoicemails();
+function renderContacts(){
+  const list=document.getElementById('contactsList');
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  let filtered=contacts;
+  if(search) filtered=contacts.filter(c=>c.username.includes(search));
+  if(filtered.length===0){list.innerHTML=`<div style=\"padding:40px;text-align:center;color:var(--text-sec);\"><div style=\"font-size:32px;margin-bottom:12px;\">👥</div><div>No contacts online</div></div>`;return;}
+  list.innerHTML=filtered.map(c=>`<div class=\"contact\" onclick=\"makeCall('${c.username}')\"><div class=\"contact-avatar\">${c.username[0].toUpperCase()}<span class=\"online-ind\"></span></div><div class=\"contact-info\"><div class=\"contact-name\">${c.username} <span style=\"font-size:10px;background:var(--green-dark);color:var(--green-light);padding:2px 6px;border-radius:6px;\">HD</span></div><div class=\"contact-sub\">Tap for HD call • TURN enabled</div></div><div style=\"color:var(--green);\">📞</div></div>`).join('');
 }
-
-function renderContacts() {
-  const list = document.getElementById('contactsList');
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  let filtered = contacts;
-  if (search) filtered = contacts.filter(c => c.username.includes(search));
-  
-  if (filtered.length===0) {
-    list.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-sec);"><div style="font-size:32px; margin-bottom:12px;">👥</div><div>No contacts online</div><div style="font-size:12px; margin-top:8px;" class="mono">Open another browser window with different username to see contacts</div></div>`;
-    return;
-  }
-  list.innerHTML = filtered.map(c => `
-    <div class="contact" onclick="makeCall('${c.username}')">
-      <div class="contact-avatar">${c.username[0].toUpperCase()}<span class="online-ind"></span></div>
-      <div class="contact-info">
-        <div class="contact-name">${c.username} <span style="font-size:10px; background:var(--green-dark); color:var(--green-light); padding:2px 6px; border-radius:6px; border:1px solid #0a4d3d;">HD</span></div>
-        <div class="contact-sub">Tap to start HD voice call • Opus 48kHz</div>
-      </div>
-      <div style="color:var(--green);">📞</div>
-    </div>
-  `).join('');
-}
-
-function filterContacts() { renderContacts(); renderHistory(); renderVoicemails(); }
-
-async function fetchHistory() {
-  if (!myUsername) return;
-  try {
-    const res = await fetch(`/api/history/${myUsername}`);
-    history = await res.json();
-    renderHistory();
-  } catch(e){}
-}
-function renderHistory() {
-  const list = document.getElementById('historyList');
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  let filtered = history;
-  if (search) filtered = history.filter(h => h.from.includes(search) || h.to.includes(search));
-  if (filtered.length===0) {
-    list.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-sec);">No call history yet</div>`;
-    return;
-  }
-  list.innerHTML = filtered.map(h => {
-    const other = h.from === myUsername ? h.to : h.from;
-    const isOut = h.from === myUsername;
-    let icon = '📞', color='var(--text-sec)', statusText = h.status;
-    if (h.status==='ended') { icon = isOut ? '↗️' : '↙️'; color = 'var(--green)'; statusText = `${h.duration}s • ended`; }
-    if (h.status==='missed') { icon = '📵'; color='var(--red)'; statusText='missed'; }
-    if (h.status==='voicemail') { icon='🎙️'; color='var(--blue)'; statusText=`voicemail • ${h.duration}s`; }
-    if (h.status==='rejected') { icon='✕'; color='var(--red)'; statusText='declined'; }
-    const date = new Date(h.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    return `
-      <div class="contact" onclick="makeCall('${other}')">
-        <div class="contact-avatar" style="background:${isOut?'#1e3a33':'#2a2f3a'};">${other[0].toUpperCase()}</div>
-        <div class="contact-info">
-          <div class="contact-name">${other} <span style="color:${color}; font-size:12px;">${icon}</span></div>
-          <div class="contact-sub">${isOut?'You →':'Incoming •'} ${statusText}</div>
-        </div>
-        <div class="contact-time">${date}</div>
-      </div>
-    `;
+function filterContacts(){renderContacts();renderHistory();renderVoicemails();}
+async function fetchHistory(){if(!myUsername) return;try{const res=await fetch(`/api/history/${myUsername}`);history=await res.json();renderHistory();}catch(e){}}
+function renderHistory(){
+  const list=document.getElementById('historyList');
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  let filtered=history;
+  if(search) filtered=history.filter(h=>h.from.includes(search)||h.to.includes(search));
+  if(filtered.length===0){list.innerHTML=`<div style=\"padding:40px;text-align:center;color:var(--text-sec);\">No history</div>`;return;}
+  list.innerHTML=filtered.map(h=>{
+    const other=h.from===myUsername?h.to:h.from;
+    const isOut=h.from===myUsername;
+    let icon='📞',color='var(--text-sec)',statusText=h.status;
+    if(h.status==='ended'){icon=isOut?'↗️':'↙️';color='var(--green)';statusText=`${h.duration}s • ended`;}
+    if(h.status==='missed'){icon='📵';color='var(--red)';statusText='missed';}
+    if(h.status==='voicemail'){icon='🎙️';color='var(--blue)';statusText=`voicemail • ${h.duration}s`;}
+    if(h.status==='rejected'){icon='✕';color='var(--red)';statusText='declined';}
+    const date=new Date(h.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    return `<div class=\"contact\" onclick=\"makeCall('${other}')\"><div class=\"contact-avatar\" style=\"background:${isOut?'#1e3a33':'#2a2f3a'};\">${other[0].toUpperCase()}</div><div class=\"contact-info\"><div class=\"contact-name\">${other} <span style=\"color:${color};font-size:12px;\">${icon}</span></div><div class=\"contact-sub\">${isOut?'You →':'Incoming •'} ${statusText}</div></div><div class=\"contact-time\">${date}</div></div>`;
   }).join('');
 }
-
-async function fetchVoicemails() {
-  if (!myUsername) return;
-  try {
-    const res = await fetch(`/api/voicemails/${myUsername}`);
-    voicemails = await res.json();
-    renderVoicemails();
-    updateVMBadge();
-  } catch(e){}
-}
-function renderVoicemails() {
-  const list = document.getElementById('voicemailList');
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  let filtered = voicemails;
-  if (search) filtered = voicemails.filter(v => v.from.includes(search));
-  if (filtered.length===0) {
-    list.innerHTML = `<div style="padding:40px; text-align:center; color:var(--text-sec);"><div style="font-size:32px; margin-bottom:12px;">🎙️</div><div>No voicemails</div><div style="font-size:12px; margin-top:8px;">When someone can't reach you, they can leave a 60s HD voicemail here — just like WhatsApp answering machine</div></div>`;
-    return;
-  }
-  list.innerHTML = filtered.map(vm => {
-    const date = new Date(vm.timestamp).toLocaleString([], {dateStyle:'short', timeStyle:'short'});
-    return `
-      <div class="voicemail-list-item">
-        <div class="vm-item-head">
-          <div class="vm-from">${!vm.listened?'<span class="vm-dot"></span>':''} ${vm.from} → you</div>
-          <div class="vm-date">${date}</div>
-        </div>
-        <div class="vm-player">
-          <button class="vm-play-btn" onclick="playVoicemail('${vm.id}', '${vm.file}')">▶️</button>
-          <div class="vm-progress" id="progress-${vm.id}"><div class="vm-progress-fill" id="fill-${vm.id}"></div></div>
-          <div class="vm-duration">${vm.duration}s</div>
-        </div>
-        <div style="font-size:11px; color:var(--text-sec); margin-top:8px;" class="mono">${vm.file.split('/').pop()} • Opus 48kHz • ${vm.transcription}</div>
-      </div>
-    `;
+async function fetchVoicemails(){if(!myUsername) return;try{const res=await fetch(`/api/voicemails/${myUsername}`);voicemails=await res.json();renderVoicemails();updateVMBadge();}catch(e){}}
+function renderVoicemails(){
+  const list=document.getElementById('voicemailList');
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  let filtered=voicemails;
+  if(search) filtered=voicemails.filter(v=>v.from.includes(search));
+  if(filtered.length===0){list.innerHTML=`<div style=\"padding:40px;text-align:center;color:var(--text-sec);\"><div style=\"font-size:32px;margin-bottom:12px;\">🎙️</div><div>No voicemails</div></div>`;return;}
+  list.innerHTML=filtered.map(vm=>{
+    const date=new Date(vm.timestamp).toLocaleString([],{dateStyle:'short',timeStyle:'short'});
+    return `<div class=\"voicemail-list-item\"><div class=\"vm-item-head\"><div class=\"vm-from\">${!vm.listened?'<span class=\"vm-dot\"></span>':''} ${vm.from} → you</div><div class=\"vm-date\">${date}</div></div><div class=\"vm-player\"><button class=\"vm-play-btn\" onclick=\"playVoicemail('${vm.id}','${vm.file}')">▶️</button><div class=\"vm-progress\" id=\"progress-${vm.id}\"><div class=\"vm-progress-fill\" id=\"fill-${vm.id}\"></div></div><div class=\"vm-duration\">${vm.duration}s</div></div></div>`;
   }).join('');
 }
-let currentAudio = null;
-async function playVoicemail(id, file) {
-  if (currentAudio) { currentAudio.pause(); currentAudio=null; }
-  const audio = new Audio(file);
-  currentAudio = audio;
-  const fill = document.getElementById(`fill-${id}`);
-  const vm = voicemails.find(v=>v.id===id);
-  // Mark listened
-  fetch(`/api/voicemail/${id}/listened`, {method:'POST'});
-  if (vm) vm.listened = true;
-  updateVMBadge();
-  
-  audio.addEventListener('timeupdate', ()=>{
-    if (fill && audio.duration) fill.style.width = (audio.currentTime/audio.duration*100)+'%';
-  });
-  audio.addEventListener('ended', ()=>{
-    if (fill) fill.style.width='0%';
-    currentAudio=null;
-  });
-  try { await audio.play(); toast(`Playing voicemail from ${vm.from}`, 'info'); } catch(e){ toast('Playback failed: '+e.message,'error'); }
+let currentAudio=null;
+async function playVoicemail(id,file){
+  if(currentAudio){currentAudio.pause();currentAudio=null;}
+  const audio=new Audio(file);currentAudio=audio;
+  const fill=document.getElementById(`fill-${id}`);const vm=voicemails.find(v=>v.id===id);
+  fetch(`/api/voicemail/${id}/listened`,{method:'POST'});if(vm) vm.listened=true;updateVMBadge();
+  audio.addEventListener('timeupdate',()=>{if(fill&&audio.duration)fill.style.width=(audio.currentTime/audio.duration*100)+'%';});
+  audio.addEventListener('ended',()=>{if(fill)fill.style.width='0%';currentAudio=null;});
+  try{await audio.play();toast(`Playing voicemail from ${vm.from}`,'info');}catch(e){toast('Playback failed: '+e.message,'error');}
 }
-function updateVMBadge() {
-  const unlistened = voicemails.filter(v=>!v.listened).length;
-  const badge = document.getElementById('vmBadge');
-  if (unlistened>0) { badge.style.display='inline'; badge.textContent=unlistened; }
+function updateVMBadge(){
+  const unlistened=voicemails.filter(v=>!v.listened).length;
+  const badge=document.getElementById('vmBadge');
+  if(unlistened>0){badge.style.display='inline';badge.textContent=unlistened;}
   else badge.style.display='none';
 }
-
-// Toast
-function toast(msg, type='info') {
-  const cont = document.getElementById('toastContainer');
-  const t = document.createElement('div');
-  t.className = `toast ${type}`;
-  t.innerHTML = `<span>${type==='success'?'✅':type==='error'?'⚠️':'ℹ️'}</span><div style="font-size:13px;">${msg}</div>`;
-  cont.appendChild(t);
-  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(20px)'; setTimeout(()=>t.remove(),300); }, 4000);
+function toast(msg,type='info'){
+  const cont=document.getElementById('toastContainer');
+  const t=document.createElement('div');t.className=`toast ${type}`;t.innerHTML=`<span>${type==='success'?'✅':type==='error'?'⚠️':'ℹ️'}</span><div style=\"font-size:13px;\">${msg}</div>`;
+  cont.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(20px)';setTimeout(()=>t.remove(),300);},4000);
 }
-
-// Mobile sidebar toggle
-document.getElementById('main')?.addEventListener('click', ()=>{
-  if (window.innerWidth<768) document.getElementById('sidebar').classList.add('hidden-mobile');
-});
+document.getElementById('main')?.addEventListener('click',()=>{if(window.innerWidth<768)document.getElementById('sidebar').classList.add('hidden-mobile');});
 </script>
 </body>
 </html>
