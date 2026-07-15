@@ -1,5 +1,11 @@
 # CallWave — HD Voice Calls + Smart Voicemail
 
+![Status](https://img.shields.io/badge/status-built-brightgreen) ![Node](https://img.shields.io/badge/node-%3E%3D18-black) ![WebRTC](https://img.shields.io/badge/WebRTC-HD%20Voice-00a884) ![License](https://img.shields.io/badge/license-MIT-blue)
+
+> WhatsApp-quality voice calls with intelligent answering machine. 48kHz Opus, noise suppression, and auto-voicemail when you miss a call.
+
+**GitHub ready** — local repo initialized, just add remote and push. See `GITHUB_SETUP.md`.
+
 A WhatsApp-like voice calling app focused on **quality** and **answering machine** flow.
 
 ## Features Built
