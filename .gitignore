@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Env
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Uploads & Data (keep folder but ignore content)
+public/uploads/*.webm
+public/uploads/*.mp3
+public/uploads/*.wav
+data/store.json
+data/*.json
+!data/.gitkeep
+
+# Build
+dist/
+build/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arena internal
+.arena/
