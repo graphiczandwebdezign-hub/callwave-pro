@@ -1,17 +1,8 @@
-// Vercel serverless entry - wraps the main server
-// Vercel will use this file for all routes if vercel.json routes to it
+// Vercel serverless entry — delegates to the Express app exported by server.js.
+// Socket.IO over Vercel serverless has the usual caveats (see DEPLOYMENT.md);
+// for production voice calls prefer a persistent host (Render / Fly / Railway).
 
-const app = require('../server.js').app;
-const { server, io } = require('../server.js');
+const { app } = require('../server.js');
 
-// For Vercel, we need to handle the server as a function
-// Socket.IO on Vercel works with WebSockets but serverless has limitations
-// This export makes Express work, Socket.IO will try to work via polling initially
-
-module.exports = (req, res) => {
-  // Let the main server handle it - in Vercel's case, app already has static etc
-  return app(req, res);
-};
-
-// Also export for Socket.IO - Vercel will keep this warm for WS
-module.exports = app;
+module.exports = (req, res) => app(req, res);
+module.exports.app = app;
