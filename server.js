@@ -10,19 +10,32 @@ const cors = require('cors');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*" }
+  cors: { origin: "*" },
+  transports: ['websocket', 'polling'], // allow both for Vercel compat
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
+// Handle paths for Vercel (read-only filesystem except /tmp)
+const isVercel = !!process.env.VERCEL;
+const baseDir = isVercel ? '/tmp' : __dirname;
+
+const publicDir = path.join(__dirname, 'public');
+const uploadDir = isVercel ? path.join('/tmp', 'uploads') : path.join(__dirname, 'public/uploads');
+const dataDir = isVercel ? path.join('/tmp', 'data') : path.join(__dirname, 'data');
+
+app.use(express.static(publicDir));
+app.use('/uploads', express.static(uploadDir));
 
 // Ensure dirs
-const uploadDir = path.join(__dirname, 'public/uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+if (!fs.existsSync(path.join(publicDir, 'uploads')) && !isVercel) {
+  fs.mkdirSync(path.join(publicDir, 'uploads'), { recursive: true });
+}
 
 // In-memory stores (with file persistence)
 let users = {}; // socketId -> { id, username, online, lastSeen }
@@ -42,12 +55,13 @@ function loadData() {
 }
 function saveData() {
   try {
+    // On Vercel, file may be ephemeral but we still try
     fs.writeFileSync(DATA_FILE, JSON.stringify({ callHistory, voicemails }, null, 2));
   } catch (e) { console.error('save failed', e); }
 }
 loadData();
 
-// Multer for voicemail
+// Multer for voicemail - use memory fallback for Vercel if needed
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
@@ -55,15 +69,28 @@ const storage = multer.diskStorage({
     cb(null, `vm_${Date.now()}_${uuidv4()}.${ext}`);
   }
 });
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB max for 60s Opus ~ 300KB
+});
 
 // REST APIs
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    platform: isVercel ? 'vercel' : 'standard',
+    online: Object.keys(users).length,
+    uptime: process.uptime()
+  });
+});
+
 app.get('/api/stats', (req, res) => {
   res.json({
     online: Object.keys(users).length,
     users: Object.values(users).map(u => ({ username: u.username, online: u.online })),
     calls: callHistory.length,
-    voicemails: voicemails.length
+    voicemails: voicemails.length,
+    platform: isVercel ? 'vercel' : 'node'
   });
 });
 
@@ -92,7 +119,7 @@ app.post('/api/upload-voicemail', upload.single('audio'), (req, res) => {
     timestamp: Date.now(),
     duration: parseInt(duration) || 0,
     listened: false,
-    transcription: `Voicemail from ${from}` // placeholder, could integrate Whisper API
+    transcription: `Voicemail from ${from}`
   };
   voicemails.push(vm);
   callHistory.push({
@@ -105,12 +132,10 @@ app.post('/api/upload-voicemail', upload.single('audio'), (req, res) => {
   });
   saveData();
 
-  // Notify recipient if online
   const toSocket = usernameToSocket[to];
   if (toSocket) {
     io.to(toSocket).emit('voicemail:new', vm);
   }
-  // Notify caller success
   res.json({ success: true, voicemail: vm });
 });
 
@@ -121,6 +146,14 @@ app.post('/api/voicemail/:id/listened', (req, res) => {
   res.json({ success: true });
 });
 
+// Serve index.html for any non-API route (SPA fallback) - but after static
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/') || req.path.startsWith('/socket.io/')) {
+    return next();
+  }
+  res.sendFile(path.join(publicDir, 'index.html'));
+});
+
 // Socket.IO Signaling
 io.on('connection', (socket) => {
   console.log('connected:', socket.id);
@@ -128,7 +161,6 @@ io.on('connection', (socket) => {
   socket.on('user:join', ({ username }) => {
     username = username.trim().toLowerCase();
     if (!username) return;
-    // Remove old socket for same username
     if (usernameToSocket[username]) {
       const oldSocket = usernameToSocket[username];
       delete users[oldSocket];
@@ -139,7 +171,6 @@ io.on('connection', (socket) => {
     socket.username = username;
     console.log(`${username} joined`);
     
-    // Broadcast online users
     io.emit('users:update', Object.values(users));
     socket.emit('user:joined', { username, id: socket.id });
   });
@@ -149,7 +180,6 @@ io.on('connection', (socket) => {
     const caller = users[socket.id];
     if (!toSocketId) {
       socket.emit('call:failed', { reason: 'User offline', to });
-      // Suggest voicemail
       socket.emit('call:go-voicemail', { to, from, reason: 'offline' });
       return;
     }
@@ -180,12 +210,9 @@ io.on('connection', (socket) => {
 
   socket.on('call:accept', ({ callId, to, from }) => {
     const callerSocketId = usernameToSocket[from];
-    const receiverSocketId = usernameToSocket[to];
-    // from is original caller, to is receiver (this socket)
     if (callerSocketId) {
       io.to(callerSocketId).emit('call:accepted', { callId, by: to });
     }
-    // Update history
     const call = callHistory.find(c => c.id === callId);
     if (call) call.status = 'ongoing';
     saveData();
@@ -259,7 +286,6 @@ io.on('connection', (socket) => {
     saveData();
   });
 
-  // WebRTC signaling
   socket.on('webrtc:offer', ({ to, offer, callId }) => {
     const toSocketId = usernameToSocket[to];
     if (toSocketId) io.to(toSocketId).emit('webrtc:offer', { from: socket.username, offer, callId });
@@ -287,9 +313,20 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n✅ CallWave HD Voice Server running on http://localhost:${PORT}`);
-  console.log(`   - HD Voice Calls (Opus 48kHz, EC, NS, AGC)`);
-  console.log(`   - Smart Answering Machine`);
-  console.log(`   - Real-time stats & quality monitoring\n`);
-});
+
+// Only listen if run directly (not imported by Vercel)
+if (require.main === module) {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n✅ CallWave HD Voice Server running on http://localhost:${PORT}`);
+    console.log(`   - HD Voice Calls (Opus 48kHz, EC, NS, AGC)`);
+    console.log(`   - Smart Answering Machine`);
+    console.log(`   - Platform: ${isVercel ? 'Vercel' : 'Standard Node'}`);
+    console.log(`   - Test: open 2 browser windows with different usernames\n`);
+  });
+}
+
+// Export for Vercel / serverless
+module.exports = app;
+module.exports.app = app;
+module.exports.server = server;
+module.exports.io = io;
