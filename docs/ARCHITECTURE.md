@@ -1,8 +1,9 @@
 # CallWave Pro — Architecture
 
-> Status after **Sprint 1A**: modular, production-shaped backend. Voice calling
-> is unchanged; auth, config, structured logging and a swappable data layer are
-> in place. Supabase persistence is queued for Sprint 1B.
+> Status after **Sprint 1C**: modular, production-shaped backend + fully
+> authenticated SPA. Voice calling is unchanged; auth (JWT + refresh tokens),
+> config, structured logging, a swappable data layer (Supabase optional), and
+> per-user authorization are all in place.
 
 ---
 
@@ -137,28 +138,40 @@ All three (data, storage, tokens) follow the same credential-gated pattern.
 
 ## 5. Authentication design
 
-- **Register/login** return a signed JWT (`HS256`, configurable TTL) plus the
-  public user object. Passwords are hashed with **bcrypt** (`bcryptjs`).
-- **`GET /auth/me`** and **`POST /auth/logout`** require a
-  `Authorization: Bearer <token>` header (enforced by `authenticate` middleware).
-- **Logout** adds the token to an in-memory revocation set (auto-pruned on
-  expiry). This is a stateless-friendly pattern; a Redis/DB-backed store is the
-  multi-instance upgrade path for later.
-- **Legacy APIs** use `optionalAuth`: an authenticated client is recognised, but
-  the existing username-only SPA keeps working without a token.
+Two token types, both signed JWT (`HS256`):
 
-### Socket authentication (prepared, permissive)
+- **Access token** — short-lived (default 15m, `JWT_ACCESS_EXPIRES_IN`),
+  `tokenUse:'access'`. Authorises REST (`authenticate`) and Socket.IO.
+- **Refresh token** — long-lived (default 7d, `JWT_REFRESH_EXPIRES_IN`),
+  `tokenUse:'refresh'`. Only valid at `POST /auth/refresh`, which mints a new
+  access token. `tokenUse` is enforced, so a refresh token can't authenticate a
+  request and an access token can't refresh.
 
-`socketService` installs an `io.use` handshake middleware. A client may pass a
-JWT via `socket.handshake.auth.token` or an `Authorization: Bearer` header:
+- **Register/login** return `{ user, accessToken, refreshToken }` (+ a `token`
+  alias = accessToken for legacy clients). Passwords hashed with **bcrypt**.
+- **`GET /auth/me`** / **`POST /auth/logout`** require an access token. Logout
+  revokes the access token (and a refresh token if supplied).
+- **Revocation** is pluggable — in-memory `Set` by default, Redis when
+  `REDIS_URL` is set (`services/tokenStore.js`, Sprint 1B) — so logout works
+  across instances.
+- **Per-user authorization** (`middleware/ownUser.js`): authenticated users may
+  only read their **own** voicemails / call history (403 otherwise). Legacy
+  unauthenticated requests pass through (`optionalAuth`) so nothing breaks.
 
-- valid  → `socket.user` is attached (logged `authenticated=true`)
-- invalid → logged as a warning, connection still allowed
-- absent → anonymous connection (current SPA behaviour)
+### Socket authentication
 
-WebRTC signalling handlers are **unchanged** in names/payloads. Requiring auth
-is now a config toggle (`SOCKET_AUTH_REQUIRED=true`) — no code change, and it
-does not affect the call flow.
+`socketService` installs an `io.use` handshake middleware. A client may pass the
+access token via `socket.handshake.auth.token` or `Authorization: Bearer`:
+
+- valid  → `socket.user` attached (logged `authenticated=true`)
+- invalid → logged as a warning, connection still allowed (unless
+  `SOCKET_AUTH_REQUIRED=true`, Sprint 1B, which rejects it)
+- absent → anonymous connection (legacy behaviour)
+
+The SPA (Sprint 1C) always authenticates: it stores tokens in `localStorage`,
+connects with `auth:{token}`, auto-refreshes on 401 and before expiry, resumes
+the session on reload via `/auth/me`, and revokes on logout. Signalling event
+names/payloads are unchanged, so voice calls are unaffected.
 
 ---
 
@@ -201,5 +214,9 @@ the placeholder.
 - ✅ **Sprint 1B** — Supabase persistence (factory + `SupabaseRepository`),
   object storage for voicemail audio (`storageService`), Redis token revocation
   (`tokenStore`), enforceable socket auth, presence mirroring. All optional.
-- **Sprint 1C** — Wire the SPA to register/login and send the token on the
-  socket; per-user voicemail authorization; refresh tokens; TURN/STUN relay.
+- ✅ **Sprint 1C** — Authenticated SPA: register/login UI, JWT on the socket,
+  refresh tokens (short access + long refresh), per-user voicemail/history
+  authorization, persistent sessions, real logout.
+- **Future** — TURN/STUN relay credentials; HttpOnly refresh-cookie hardening
+  (and refresh-token rotation/reuse detection); SPA-driven Supabase queries with
+  per-user RLS.

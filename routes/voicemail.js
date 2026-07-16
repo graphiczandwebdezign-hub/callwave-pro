@@ -6,6 +6,7 @@ const voicemailService = require('../services/voicemailService');
 const callService = require('../services/callService');
 const socketService = require('../services/socketService');
 const storageService = require('../services/storageService');
+const { ownUserOrLegacy } = require('../middleware/ownUser');
 
 const router = express.Router();
 
@@ -22,8 +23,8 @@ function voicemailFilename(originalname) {
   return `vm_${Date.now()}_${uuidv4()}.${ext}`;
 }
 
-// GET /api/voicemails/:username
-router.get('/voicemails/:username', async (req, res, next) => {
+// GET /api/voicemails/:username  (authenticated users restricted to their own)
+router.get('/voicemails/:username', ownUserOrLegacy, async (req, res, next) => {
   try {
     res.json(await voicemailService.forUser(req.params.username));
   } catch (err) {

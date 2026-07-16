@@ -1,15 +1,14 @@
 # CallWave Pro — HD Voice Calls + Smart Voicemail
 
-![Status](https://img.shields.io/badge/status-v2.1%20Sprint%201B-00a884) ![Node](https://img.shields.io/badge/node-%3E%3D18-black) ![WebRTC](https://img.shields.io/badge/WebRTC-HD%20Voice-00a884) ![License](https://img.shields.io/badge/license-MIT-blue)
+![Status](https://img.shields.io/badge/status-v2.2%20Sprint%201C-00a884) ![Node](https://img.shields.io/badge/node-%3E%3D18-black) ![WebRTC](https://img.shields.io/badge/WebRTC-HD%20Voice-00a884) ![License](https://img.shields.io/badge/license-MIT-blue)
 
 > WhatsApp-quality voice calls with an intelligent answering machine. 48kHz
 > Opus, noise suppression, and auto-voicemail when you miss a call.
 
-**CallWave Pro v2.1** keeps all voice-calling functionality from v1 while
-running on a clean, production-shaped modular architecture (Sprint 1A) with
-optional Supabase persistence, cloud voicemail storage, Redis-backed token
-revocation, and enforceable socket auth (Sprint 1B). Every production backend
-is **optional** — leave the env vars blank and it runs on local JSON/files.
+**CallWave Pro v2.2** keeps all voice-calling functionality from v1 while running
+on a clean, modular architecture with optional Supabase persistence, cloud
+voicemail storage, Redis token revocation, and a fully authenticated SPA
+(register/login, JWT + refresh tokens, per-user authorization).
 
 ---
 
@@ -24,8 +23,13 @@ prepared socket auth, structured logging, central error handling. Voice calls un
 **Redis**-backed token revocation, **enforceable** socket auth, and presence
 mirroring — all credential-gated, so nothing breaks without them.
 
+**Sprint 1C** — **Authenticated SPA**: register/login UI, JWT on the socket,
+**refresh tokens** (short access + long refresh), **per-user voicemail/history
+authorization**, persistent sessions, and real logout. Voice calls unchanged.
+
 📖 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md),
-[`docs/SPRINT-1A.md`](docs/SPRINT-1A.md), [`docs/SPRINT-1B.md`](docs/SPRINT-1B.md).
+[`docs/SPRINT-1A.md`](docs/SPRINT-1A.md), [`docs/SPRINT-1B.md`](docs/SPRINT-1B.md),
+[`docs/SPRINT-1C.md`](docs/SPRINT-1C.md).
 
 ---
 
@@ -78,12 +82,18 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
 | Method & path          | Auth   | Body / Header            | Returns                       |
 |------------------------|--------|--------------------------|-------------------------------|
-| `POST /auth/register`  | —      | `{ username, password }` | `201 { success, user, token }`|
-| `POST /auth/login`     | —      | `{ username, password }` | `200 { success, user, token }`|
-| `GET  /auth/me`        | Bearer | `Authorization` header   | `200 { success, user }`       |
-| `POST /auth/logout`    | Bearer | `Authorization` header   | `200 { success }` (revokes)   |
+| `POST /auth/register`  | —      | `{ username, password }` | `201 { success, user, accessToken, refreshToken }` |
+| `POST /auth/login`     | —      | `{ username, password }` | `200 { success, user, accessToken, refreshToken }` |
+| `POST /auth/refresh`   | refresh| `Authorization: Bearer` (or `{ refreshToken }`) | `200 { success, accessToken }` |
+| `GET  /auth/me`        | access | `Authorization` header   | `200 { success, user }`       |
+| `POST /auth/logout`    | access | `Authorization` header (+ `{ refreshToken }`) | `200 { success }` (revokes)   |
 
-Validation rules: username ≥ 2 chars, password ≥ 6 chars.
+- **Access tokens** are short-lived (15m) and used for REST + Socket.IO.
+- **Refresh tokens** are long-lived (7d), used only at `/auth/refresh`, and are
+  revoked on logout. A `tokenUse` claim prevents cross-use.
+- **Per-user authorization:** authenticated users may only read their own
+  voicemails / call history (403 otherwise); legacy anonymous access still works.
+- Validation rules: username ≥ 2 chars, password ≥ 6 chars.
 
 ---
 
@@ -131,7 +141,8 @@ All settings are environment-driven (see [`.env.example`](.env.example)):
 | `PORT`          | `3000`        | HTTP port                         |
 | `CORS_ORIGIN`   | `*`           | Allowed origins                   |
 | `JWT_SECRET`    | — (required)  | Token signing secret              |
-| `JWT_EXPIRES_IN`| `7d`          | Token lifetime                    |
+| `JWT_ACCESS_EXPIRES_IN` | `15m` | Access token lifetime       |
+| `JWT_REFRESH_EXPIRES_IN`| `7d`  | Refresh token lifetime      |
 | `BCRYPT_ROUNDS` | `10`          | Password hashing cost             |
 | `SOCKET_AUTH_REQUIRED` | `false` | Require JWT on socket connect   |
 | `LOG_LEVEL`     | `debug`       | trace/debug/info/warn/error/fatal |
@@ -190,8 +201,9 @@ See [`DEPLOYMENT.md`](DEPLOYMENT.md) for full instructions.
 
 - ✅ **Sprint 1A** — modular architecture, config, auth, logging, data-layer swap point.
 - ✅ **Sprint 1B** — Supabase persistence, cloud voicemail storage, Redis revocation, enforceable socket auth.
-- **Sprint 1C** — Wire the SPA to auth (register/login UI, token on socket,
-  per-user voicemail authorization, refresh tokens); TURN/STUN relay.
+- ✅ **Sprint 1C** — Authenticated SPA (register/login UI, JWT on socket, refresh tokens, per-user authorization).
+- **Future** — TURN/STUN relay credentials; HttpOnly refresh-cookie hardening;
+  SPA-driven Supabase queries with per-user RLS.
 
 ---
 

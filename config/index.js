@@ -73,7 +73,9 @@ module.exports = Object.freeze({
 
   // Auth
   jwtSecret: jwtSecret || (isProd ? undefined : 'dev-insecure-secret-change-me'),
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '15m', // kept as the access-token TTL alias
+  jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || process.env.JWT_EXPIRES_IN || '15m',
+  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 10,
   /** When true, socket connections without a valid JWT are rejected. */
   socketAuthRequired: process.env.SOCKET_AUTH_REQUIRED === 'true',
