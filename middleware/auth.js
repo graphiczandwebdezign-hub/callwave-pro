@@ -17,8 +17,8 @@ function extractToken(req) {
   return null;
 }
 
-function attachUser(req, token) {
-  if (authService.isRevoked(token)) return { revoked: true };
+async function attachUser(req, token) {
+  if (await authService.isRevoked(token)) return { revoked: true };
   try {
     const payload = authService.verifyToken(token);
     req.user = { id: payload.sub, username: payload.username };
@@ -29,24 +29,34 @@ function attachUser(req, token) {
   }
 }
 
-function authenticate(req, res, next) {
+async function authenticate(req, res, next) {
   const token = extractToken(req);
   if (!token) {
     return res.status(401).json({ error: 'Authentication required', code: 'NO_TOKEN' });
   }
-  const result = attachUser(req, token);
-  if (result.revoked) {
-    return res.status(401).json({ error: 'Token has been revoked', code: 'TOKEN_REVOKED' });
+  try {
+    const result = await attachUser(req, token);
+    if (result.revoked) {
+      return res.status(401).json({ error: 'Token has been revoked', code: 'TOKEN_REVOKED' });
+    }
+    if (!result.ok) {
+      return res.status(401).json({ error: 'Invalid or expired token', code: 'BAD_TOKEN' });
+    }
+    next();
+  } catch (err) {
+    next(err);
   }
-  if (!result.ok) {
-    return res.status(401).json({ error: 'Invalid or expired token', code: 'BAD_TOKEN' });
-  }
-  next();
 }
 
-function optionalAuth(req, res, next) {
+async function optionalAuth(req, res, next) {
   const token = extractToken(req);
-  if (token) attachUser(req, token); // best-effort; ignore failures
+  if (token) {
+    try {
+      await attachUser(req, token); // best-effort; ignore failures
+    } catch {
+      /* ignore */
+    }
+  }
   next();
 }
 

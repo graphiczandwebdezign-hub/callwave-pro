@@ -1,111 +1,44 @@
-const fs = require('fs');
-const path = require('path');
 const config = require('../config');
 const logger = require('../utils/logger');
+const JsonRepository = require('./repositories/jsonRepository');
+const SupabaseRepository = require('./repositories/supabaseRepository');
 
 const log = logger.child({ module: 'dataService' });
 
 /**
- * JSON-file-backed repository.
+ * Data layer factory.
  *
- * This is the modular data layer that replaces the old inline `store.json`
- * read/write code in server.js. Each collection is a self-contained repository
- * with a small, well-defined interface (all/find/findOne/findById/insert/
- * updateById/removeById).
+ * Picks the backend per process: Supabase repositories when credentials are
+ * present, otherwise the JSON-file repositories from Sprint 1A. Either way the
+ * exported `db` object exposes the SAME async repository interface, so every
+ * consumer (user/call/voicemail services, routes) is backend-agnostic.
  *
- * >>> Sprint 1B swap-out point <<<
- * To migrate to Supabase/Postgres, implement the SAME interface against the
- * Supabase client and export those instances from here. No calling code needs
- * to change because every consumer talks to `db.<collection>` through these
- * async methods.
+ * >>> This is the Supabase swap point introduced in Sprint 1A. <<<
  */
-class JsonRepository {
-  constructor(name) {
-    this.name = name;
-    this.file = path.join(config.dataDir, `${name}.json`);
-    this._cache = null;
-    this._load();
-  }
+const useSupabase = config.supabase.enabled;
+const Repository = useSupabase ? SupabaseRepository : JsonRepository;
 
-  _load() {
-    try {
-      if (fs.existsSync(this.file)) {
-        this._cache = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-      } else {
-        this._cache = [];
-      }
-    } catch (err) {
-      log.error('failed to load collection, starting empty', {
-        collection: this.name,
-        error: err.message,
-      });
-      this._cache = [];
-    }
-  }
+// Per-table config. `fieldMap` maps JS keys to DB columns for SQL reserved
+// words (from/to) so callers keep using the natural camelCase names.
+const tables = [
+  { name: 'accounts' },
+  { name: 'calls', fieldMap: { from: 'from_user', to: 'to_user' } },
+  { name: 'voicemails', fieldMap: { from: 'from_user', to: 'to_user' } },
+];
 
-  _persist() {
-    try {
-      fs.writeFileSync(this.file, JSON.stringify(this._cache, null, 2));
-    } catch (err) {
-      // Writes may fail on ephemeral/serverless FS (Vercel /tmp) — log and continue.
-      log.warn('failed to persist collection', {
-        collection: this.name,
-        error: err.message,
-      });
-    }
-  }
-
-  async all() {
-    return [...this._cache];
-  }
-
-  async find(predicate) {
-    return this._cache.filter(predicate);
-  }
-
-  async findOne(predicate) {
-    return this._cache.find(predicate) || null;
-  }
-
-  async findById(id) {
-    return this._cache.find((doc) => doc.id === id) || null;
-  }
-
-  async insert(doc) {
-    this._cache.push(doc);
-    this._persist();
-    return doc;
-  }
-
-  async updateById(id, patch) {
-    const idx = this._cache.findIndex((doc) => doc.id === id);
-    if (idx === -1) return null;
-    this._cache[idx] = { ...this._cache[idx], ...patch, updatedAt: Date.now() };
-    this._persist();
-    return this._cache[idx];
-  }
-
-  async removeById(id) {
-    const idx = this._cache.findIndex((doc) => doc.id === id);
-    if (idx === -1) return false;
-    this._cache.splice(idx, 1);
-    this._persist();
-    return true;
-  }
+const db = {};
+for (const t of tables) {
+  db[t.name] = new Repository(t.name, { fieldMap: t.fieldMap || {} });
 }
 
-// Single shared instances — imported everywhere as `require('./dataService')`.
-const db = {
-  accounts: new JsonRepository('accounts'),
-  calls: new JsonRepository('calls'),
-  voicemails: new JsonRepository('voicemails'),
-};
-
 log.info('data layer initialised', {
+  backend: useSupabase ? 'supabase' : 'json',
   platform: config.platform,
   dataDir: config.dataDir,
   collections: Object.keys(db),
 });
 
 module.exports = db;
+module.exports.backend = useSupabase ? 'supabase' : 'json';
 module.exports.JsonRepository = JsonRepository;
+module.exports.SupabaseRepository = SupabaseRepository;

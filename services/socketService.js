@@ -6,6 +6,7 @@ const presence = require('./presenceService');
 const callService = require('./callService');
 const voicemailService = require('./voicemailService');
 const authService = require('./authService');
+const userService = require('./userService');
 
 const log = logger.child({ module: 'socket' });
 
@@ -50,6 +51,10 @@ function init(server) {
         });
       }
     }
+    // Sprint 1B: optionally require a valid token to connect.
+    if (config.socketAuthRequired && !socket.user) {
+      return next(new Error('Authentication required'));
+    }
     next();
   });
 
@@ -74,6 +79,13 @@ function init(server) {
       log.info('user joined', { username, socketId: socket.id });
       io.emit('users:update', presence.list());
       socket.emit('user:joined', { username, id: socket.id });
+
+      // Sprint 1B: mirror online status to the account record when DB is on.
+      if (config.supabase.enabled) {
+        userService
+          .updateStatus(username, { online: true })
+          .catch((e) => log.warn('presence persist failed', { username, error: e.message }));
+      }
     });
 
     // -------------------------------------------------------------- call: signal
@@ -188,6 +200,13 @@ function init(server) {
       if (user) {
         log.info('user disconnected', { username: user.username, socketId: socket.id });
         io.emit('users:update', presence.list());
+
+        // Sprint 1B: mark the account offline when DB is on.
+        if (config.supabase.enabled) {
+          userService
+            .updateStatus(user.username, { online: false })
+            .catch((e) => log.warn('presence persist failed', { username: user.username, error: e.message }));
+        }
       }
     });
   });

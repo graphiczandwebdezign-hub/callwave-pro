@@ -1,26 +1,26 @@
 const express = require('express');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
-const config = require('../config');
 const asyncHandler = require('../utils/asyncHandler');
 const voicemailService = require('../services/voicemailService');
 const callService = require('../services/callService');
 const socketService = require('../services/socketService');
+const storageService = require('../services/storageService');
 
 const router = express.Router();
 
-// Voicemail upload: disk storage (memory unavailable on Vercel's read-only FS).
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, config.uploadDir),
-  filename: (req, file, cb) => {
-    const ext = (file.originalname.split('.').pop() || 'webm');
-    cb(null, `vm_${Date.now()}_${uuidv4()}.${ext}`);
-  },
-});
+// Voicemail upload: buffer in memory, then persist via the storage service
+// (local FS or Supabase Storage). Memory storage avoids disk-path issues on
+// serverless and lets the provider decide where the bytes land.
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
+
+function voicemailFilename(originalname) {
+  const ext = originalname.split('.').pop() || 'webm';
+  return `vm_${Date.now()}_${uuidv4()}.${ext}`;
+}
 
 // GET /api/voicemails/:username
 router.get('/voicemails/:username', async (req, res, next) => {
@@ -38,11 +38,19 @@ router.post('/upload-voicemail', upload.single('audio'), asyncHandler(async (req
     return res.status(400).json({ error: 'Missing data' });
   }
 
+  // Persist the audio via the configured provider (local FS or Supabase Storage).
+  const filename = voicemailFilename(req.file.originalname);
+  const stored = await storageService.save({
+    buffer: req.file.buffer,
+    filename,
+    contentType: req.file.mimetype,
+  });
+
   const vm = await voicemailService.create({
     from,
     to,
-    file: `/uploads/${req.file.filename}`,
-    filename: req.file.filename,
+    file: stored.url, // '/uploads/...' (local) or full Supabase URL
+    filename: stored.key,
     duration: parseInt(duration, 10) || 0,
   });
 

@@ -6,6 +6,10 @@ require('dotenv').config();
  * Centralised, immutable application configuration.
  * All runtime settings are read from the environment here (and only here),
  * so the rest of the codebase depends on this single source of truth.
+ *
+ * Sprint 1B adds: Supabase (DB + Storage), Redis (token revocation), and a
+ * toggle to enforce socket authentication. Each is *optional* — when its env
+ * vars are absent the app falls back to the local JSON/file/memory backends.
  */
 const env = process.env.NODE_ENV || 'development';
 const isProd = env === 'production';
@@ -39,6 +43,22 @@ if (isProd && (!jwtSecret || jwtSecret === 'replace-me-with-a-long-random-secret
   );
 }
 
+// ---- Supabase (optional) --------------------------------------------------
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseEnabled = !!(supabaseUrl && supabaseServiceRoleKey);
+
+if (isProd && process.env.SUPABASE_URL && !supabaseServiceRoleKey) {
+  // eslint-disable-next-line no-console
+  console.warn('[config] SUPABASE_URL set but SUPABASE_SERVICE_ROLE_KEY missing — DB disabled.');
+}
+
+// ---- Object storage (optional) -------------------------------------------
+// 'supabase' when Supabase is on AND a bucket is configured, else local FS.
+const storageProvider =
+  process.env.STORAGE_PROVIDER ||
+  (supabaseEnabled && process.env.SUPABASE_STORAGE_BUCKET ? 'supabase' : 'local');
+
 module.exports = Object.freeze({
   env,
   isProd,
@@ -55,6 +75,8 @@ module.exports = Object.freeze({
   jwtSecret: jwtSecret || (isProd ? undefined : 'dev-insecure-secret-change-me'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 10,
+  /** When true, socket connections without a valid JWT are rejected. */
+  socketAuthRequired: process.env.SOCKET_AUTH_REQUIRED === 'true',
 
   // Logging
   logLevel: (process.env.LOG_LEVEL || (isProd ? 'info' : 'debug')).toLowerCase(),
@@ -64,4 +86,23 @@ module.exports = Object.freeze({
   publicDir,
   uploadDir,
   dataDir,
+
+  // Supabase / DB
+  supabase: Object.freeze({
+    enabled: supabaseEnabled,
+    url: supabaseUrl,
+    anonKey: process.env.SUPABASE_ANON_KEY || '',
+    serviceRoleKey: supabaseServiceRoleKey,
+  }),
+
+  // Object storage
+  storage: Object.freeze({
+    provider: storageProvider,
+    bucket: process.env.SUPABASE_STORAGE_BUCKET || 'voicemails',
+  }),
+
+  // Redis (token revocation) — optional
+  redis: Object.freeze({
+    url: process.env.REDIS_URL || null,
+  }),
 });

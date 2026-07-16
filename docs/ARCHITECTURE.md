@@ -101,23 +101,37 @@ backend-swappable.
 
 ---
 
-## 4. The data layer (Sprint 1B swap point)
+## 4. The data layer (factory + pluggable backends)
 
-`services/dataService.js` exposes three repositories — `accounts`, `calls`,
-`voicemails` — each implementing the same async interface:
+`services/dataService.js` is a **factory** that exposes three repositories —
+`accounts`, `calls`, `voicemails` — each implementing the same async interface:
 
 ```
 all() · find(predicate) · findOne(predicate) · findById(id)
 insert(doc) · updateById(id, patch) · removeById(id)
 ```
 
-Today each is a `JsonRepository` backed by a file in `data/`. **To move to
-Supabase, implement that same interface against the Supabase client and export
-those instances instead.** Because every consumer (user/call/voicemail services,
-routes) calls `db.<collection>.<method>()`, no other file needs to change.
+At startup it picks the backend:
 
-Presence (`presenceService`) is deliberately **not** persisted — it is live
-connection state only.
+- **Supabase configured** → `SupabaseRepository` (`services/repositories/`)
+  talking to Postgres via the service-role client.
+- **otherwise** → `JsonRepository` (a file per collection in `data/`).
+
+Because every consumer calls `db.<collection>.<method>()`, **no caller knows or
+cares which backend is active** — the swap is fully transparent. Field mapping
+(camelCase ↔ snake_case, and `from`/`to` ↔ `from_user`/`to_user`) lives entirely
+inside `SupabaseRepository`. See `docs/SPRINT-1B.md`.
+
+Presence (`presenceService`) stays **in-memory** (it is the live routing source
+of truth and must be synchronous). When Supabase is on, join/disconnect also
+mirror `is_online`/`last_seen_at` onto the account row — but presence itself is
+never the persistence backend.
+
+### Object storage & token revocation (also pluggable)
+- `services/storageService.js` — voicemail audio: Supabase Storage or local FS.
+- `services/tokenStore.js` — logout revocation: Redis or in-memory.
+
+All three (data, storage, tokens) follow the same credential-gated pattern.
 
 ---
 
@@ -142,9 +156,9 @@ JWT via `socket.handshake.auth.token` or an `Authorization: Bearer` header:
 - invalid → logged as a warning, connection still allowed
 - absent → anonymous connection (current SPA behaviour)
 
-WebRTC signalling handlers are **unchanged** in names/payloads, so turning the
-"permissive" check into a hard requirement later is a one-line change and will
-not affect the call flow.
+WebRTC signalling handlers are **unchanged** in names/payloads. Requiring auth
+is now a config toggle (`SOCKET_AUTH_REQUIRED=true`) — no code change, and it
+does not affect the call flow.
 
 ---
 
@@ -184,7 +198,8 @@ the placeholder.
 
 ## 9. Roadmap
 
-- **Sprint 1B** — Supabase: swap `dataService` repositories; object storage
-  (S3/R2) for voicemail audio; persist presence sessions; enforce socket auth.
+- ✅ **Sprint 1B** — Supabase persistence (factory + `SupabaseRepository`),
+  object storage for voicemail audio (`storageService`), Redis token revocation
+  (`tokenStore`), enforceable socket auth, presence mirroring. All optional.
 - **Sprint 1C** — Wire the SPA to register/login and send the token on the
-  socket; per-user voicemail authorization; refresh tokens.
+  socket; per-user voicemail authorization; refresh tokens; TURN/STUN relay.

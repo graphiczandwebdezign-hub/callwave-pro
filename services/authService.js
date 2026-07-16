@@ -59,28 +59,17 @@ async function login({ username, password }) {
 }
 
 // --- revocation (stateless logout) ----------------------------------------
-// A lightweight in-memory blacklist of revoked tokens, pruned as they expire.
-// Suitable for Sprint 1A single-instance deployments; a persistent store
-// (Redis / DB) is the Sprint 1B upgrade path.
-const revoked = new Set();
+// Backed by the pluggable tokenStore: in-memory (default) or Redis (when
+// REDIS_URL is set) so revocation is shared across instances / serverless.
+const tokenStore = require('./tokenStore');
 
-function revokeToken(token) {
-  revoked.add(token);
-  try {
-    const decoded = jwt.decode(token);
-    if (decoded && decoded.exp) {
-      const ms = decoded.exp * 1000 - Date.now();
-      const handle = setTimeout(() => revoked.delete(token), Math.max(ms, 0));
-      if (handle.unref) handle.unref();
-    }
-  } catch {
-    /* ignore */
-  }
-  log.info('token revoked');
+async function revokeToken(token) {
+  await tokenStore.add(token);
+  log.info('token revoked', { backend: config.redis.url ? 'redis' : 'memory' });
 }
 
-function isRevoked(token) {
-  return revoked.has(token);
+async function isRevoked(token) {
+  return tokenStore.has(token);
 }
 
 module.exports = {

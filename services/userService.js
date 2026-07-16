@@ -51,10 +51,26 @@ async function verifyCredentials(username, password) {
   return ok ? user : null;
 }
 
+/**
+ * Mirror live presence into the account record (online flag + last-seen).
+ * Used by socketService when persistence is enabled. No-op for unregistered
+ * (legacy username-only) users. Returns null if the account doesn't exist.
+ */
+async function updateStatus(username, { online, lastSeen }) {
+  const user = await findByUsername(username);
+  if (!user) return null;
+  return db.accounts.updateById(user.id, {
+    isOnline: !!online,
+    lastSeenAt: lastSeen || Date.now(),
+    updatedAt: Date.now(),
+  });
+}
+
 module.exports = {
   normalize,
   toPublic,
   createUser,
   findByUsername,
   verifyCredentials,
+  updateStatus,
 };
