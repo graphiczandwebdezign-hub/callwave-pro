@@ -10,4 +10,8 @@ services:
         value: production
       - key: PORT
         value: 10000
+      # Generate and retain the production signing key in Render rather than
+      # relying on a repository .env file at runtime.
+      - key: JWT_SECRET
+        generateValue: true
     healthCheckPath: /api/health

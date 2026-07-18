@@ -39,7 +39,8 @@ const jwtSecret = process.env.JWT_SECRET;
 if (isProd && (!jwtSecret || jwtSecret === 'replace-me-with-a-long-random-secret')) {
   // Fail fast in production rather than running with an insecure/placeholder secret.
   throw new Error(
-    'FATAL: JWT_SECRET must be set to a strong random value in production. See .env.example.'
+    'FATAL: JWT_SECRET is missing or insecure. Set it in the deployment environment ' +
+      '(Render: Environment; Vercel: Project Settings > Environment Variables).'
   );
 }
 
