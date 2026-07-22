@@ -35,12 +35,36 @@ for (const dir of [uploadDir, dataDir]) {
   }
 }
 
+// Strong-secret validation. dotenv does NOT override host env vars, so on a host
+// like Render the dashboard value always wins over the committed .env. We therefore
+// reject anything missing/empty, the documented placeholder, or shorter than the
+// configured minimum, and give an actionable message instead of a cryptic crash.
+const PLACEHOLDER_SECRETS = new Set([
+  'replace-me-with-a-long-random-secret',
+  'change-me',
+  'secret',
+  'your-secret-here',
+]);
+const MIN_SECRET_LENGTH = parseInt(process.env.JWT_SECRET_MIN_LENGTH || '16', 10);
 const jwtSecret = process.env.JWT_SECRET;
-if (isProd && (!jwtSecret || jwtSecret === 'replace-me-with-a-long-random-secret')) {
+const trimmedSecret = jwtSecret && jwtSecret.trim();
+
+function isWeakSecret(secret) {
+  if (!secret) return 'JWT_SECRET is not set';
+  if (PLACEHOLDER_SECRETS.has(secret)) return 'JWT_SECRET is a placeholder value';
+  if (secret.length < MIN_SECRET_LENGTH) return `JWT_SECRET is shorter than ${MIN_SECRET_LENGTH} characters`;
+  return null;
+}
+
+const secretIssue = isWeakSecret(trimmedSecret);
+if (isProd && secretIssue) {
   // Fail fast in production rather than running with an insecure/placeholder secret.
   throw new Error(
-    'FATAL: JWT_SECRET is missing or insecure. Set it in the deployment environment ' +
-      '(Render: Environment; Vercel: Project Settings > Environment Variables).'
+    `FATAL: ${secretIssue}. In production you MUST set JWT_SECRET to a strong ` +
+      'random value (>= 32 chars recommended) in the host environment. ' +
+      'Render: Dashboard > your service > Environment > Add Environment Variable ' +
+      'JWT_SECRET. Note: host env vars override the committed .env file, so also ' +
+      'check there is no stale/empty JWT_SECRET in the dashboard. See .env.example.'
   );
 }
 
